@@ -190,12 +190,20 @@ local TrackedEntities = {
 	Prompts = {}
 }
 
+local completedMachines = {}
+
 local function isTwisted(model)
 	if not model or not model:IsA("Model") or Players:GetPlayerFromCharacter(model) then return false end
-	if CollectionService:HasTag(model, "Twisted") or CollectionService:HasTag(model, "Monster") then return true end
-	
 	local lowerName = string.lower(model.Name)
-	if string.find(lowerName, "twisted") then return true end
+	
+	-- Verify existence of 'monster' in the instance name
+	if not string.find(lowerName, "monster") and not CollectionService:HasTag(model, "Monster") then
+		return false
+	end
+
+	if CollectionService:HasTag(model, "Twisted") or CollectionService:HasTag(model, "Monster") then 
+		return true 
+	end
 	
 	for filterKey, enabled in pairs(monsterFilters) do
 		if enabled and string.find(lowerName, filterKey) then
@@ -331,10 +339,10 @@ local DialogueLines = {
 	}
 }
 
--- Compact Top-Center <0> UI Container
+-- Compact Top-Center <0> UI Container (Raised 20px)
 local zeroWrapper = Instance.new("Frame")
 zeroWrapper.Size = UDim2.new(0, 240, 0, 56)
-zeroWrapper.Position = UDim2.new(0.5, -120, 0, 18) 
+zeroWrapper.Position = UDim2.new(0.5, -120, 0, -2) 
 zeroWrapper.BackgroundColor3 = Color3.fromRGB(10, 5, 14)
 zeroWrapper.BorderSizePixel = 0
 zeroWrapper.BackgroundTransparency = 1
@@ -440,7 +448,8 @@ end
 local lastCategoryTick = {}
 local function queueDialogue(category)
 	if shuttingDown then return end
-	if lastCategoryTick[category] and tick() - lastCategoryTick[category] < 12 then return end 
+	-- 7.5s Cooldown between dialogue events
+	if lastCategoryTick[category] and tick() - lastCategoryTick[category] < 7.5 then return end 
 	lastCategoryTick[category] = tick()
 	
 	local lines = DialogueLines[category]
@@ -1109,16 +1118,23 @@ local function trackPrompt(prompt)
 	prompt.PromptButtonHoldBegan:Connect(function()
 		local machineModel = prompt:FindFirstAncestorWhichIsA("Model")
 		if string.lower(prompt.ActionText) == "extract" or (machineModel and isMachine(machineModel)) then
-			activeExtractingMachine = machineModel or prompt.Parent
-			queueDialogue("BeginExtract")
+			local targetMachine = machineModel or prompt.Parent
+			if not completedMachines[targetMachine] then
+				activeExtractingMachine = targetMachine
+				queueDialogue("BeginExtract")
+			end
 		end
 	end)
 
 	prompt.Triggered:Connect(function()
 		local machineModel = prompt:FindFirstAncestorWhichIsA("Model")
 		if string.lower(prompt.ActionText) == "extract" or (machineModel and isMachine(machineModel)) then
-			activeExtractingMachine = nil
-			queueDialogue("FinishMachine")
+			local targetMachine = machineModel or prompt.Parent
+			if not completedMachines[targetMachine] then
+				completedMachines[targetMachine] = true
+				activeExtractingMachine = nil
+				queueDialogue("FinishMachine")
+			end
 		end
 	end)
 
@@ -1531,8 +1547,8 @@ local function toggleMinimize()
 		if togglesOpen then
 			TweenService:Create(extendedFrame, ti, {Size = UDim2.new(1, 0, 0, 155)}):Play()
 			TweenService:Create(extOuterStroke, ti, {Transparency = 0}):Play()
-			TweenService:Create(extSideL, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
-			TweenService:Create(extSideR, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
+			TweenService:Create(extSideL, ti, {BackgroundTransparency = active and 0.5 or 0.8}):Play()
+			TweenService:Create(extSideR, ti, {BackgroundTransparency = active and 0.5 or 0.8}):Play()
 			for _, item in ipairs(toggleList) do 
 				if item.label then TweenService:Create(item.label, ti, {TextTransparency = 0}):Play() end
 				if item.badge then TweenService:Create(item.badge, ti, {TextTransparency = 0}):Play() end
@@ -1738,6 +1754,7 @@ table.insert(connections, workspace.DescendantRemoving:Connect(function(desc)
 	if desc:IsA("Model") then
 		TrackedEntities.Twisteds[desc] = nil
 		TrackedEntities.Machines[desc] = nil
+		completedMachines[desc] = nil
 	elseif desc:IsA("ProximityPrompt") then
 		TrackedEntities.Prompts[desc] = nil
 		EnvironmentSnapshot.Prompts[desc] = nil
