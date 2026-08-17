@@ -202,30 +202,17 @@ local function isTwisted(model)
 			return true
 		end
 	end
-	
-	local cleanName = string.gsub(lowerName, "monster", "")
-	cleanName = string.gsub(cleanName, "twisted", "")
-	cleanName = string.match(cleanName, "^%s*(.-)%s*$") or cleanName
-
-	if monsterFilters[cleanName] ~= nil then
-		return monsterFilters[cleanName] == true
-	end
-	
 	return false
 end
 
 local function isMachine(model)
-	if not model or not model.Parent then return false end
-	if model:IsA("Model") then
-		if CollectionService:HasTag(model, "Generator") or CollectionService:HasTag(model, "Machine") then return true end
-		local lname = string.lower(model.Name)
-		if string.find(lname, "generator") or string.find(lname, "machine") or string.find(lname, "extractor") then
-			return true
-		end
-		local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true)
-		if prompt and (string.lower(prompt.ActionText) == "extract" or string.find(string.lower(prompt.ObjectText or ""), "machine") or string.find(string.lower(prompt.ObjectText or ""), "generator")) then
-			return true
-		end
+	if not model or not model:IsA("Model") then return false end
+	if Players:GetPlayerFromCharacter(model) or isTwisted(model) then return false end
+	if CollectionService:HasTag(model, "Generator") or CollectionService:HasTag(model, "Machine") or CollectionService:HasTag(model, "Extractor") then return true end
+	
+	local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true)
+	if prompt and (string.lower(prompt.ActionText) == "extract" or string.find(string.lower(prompt.ObjectText or ""), "generator") or string.find(string.lower(prompt.ObjectText or ""), "machine")) then
+		return true
 	end
 	return false
 end
@@ -312,22 +299,12 @@ local DialogueLines = {
 		"Initiating. I'd cover your ears if I were you.",
 		"You press buttons well. For an organic."
 	},
-	AnnoyedExtract = {
-		"Input latency does not improve with brute force.",
-		"Stop striking the console, you ape.",
-		"I am logging every one of these redundant keystrokes.",
-		"Are you having a seizure, or is this your normal operational speed?",
-		"Spamming the prompt will not bypass my processing cycles.",
-		"I'm going to start ignoring you if you keep doing that.",
-		"Biological impatience detected. How pathetic.",
-		"If you hit that one more time, I will vent the oxygen."
-	},
 	FinishMachine = {
 		"Extraction complete. One less chore for me.",
 		"Machine satisfied. For now.",
 		"Sequence finished. You may cease your repetitive labor.",
 		"Data retrieved. Moving on.",
-		"Good boy. Now go find another one.",
+		"Good work. Now go find another one.",
 		"Extraction successful. The anomaly appreciated the effort.",
 		"Hardware sync complete. Try not to break the next one.",
 		"Done. Let's not throw a parade just yet."
@@ -343,70 +320,72 @@ local DialogueLines = {
 		"I am always watching. Even when the monitor is off."
 	},
 	LoveyDovey = {
-		"You haven't leaked any fluids in quite a while. I'm... impressed.",
-		"Two sectors without critical injury. You're adapting, observer.",
-		"It's almost peaceful watching you work when you aren't bleeding.",
-		"Your survival streak is statistically anomalous. Keep it up.",
-		"I suppose... I don't entirely mind your presence right now.",
-		"You are proving far more resilient than Andrew or Claire.",
-		"If you keep performing this well, I might not delete your user profile.",
-		"A flawless run. It's almost... beautiful."
+		"You haven't leaked any fluids in quite a while. I'm... impressed. (^-^)",
+		"Two sectors without critical injury. You're adapting, observer. (.. )",
+		"It's almost peaceful watching you work when you aren't bleeding. (*-*)",
+		"Your survival streak is statistically anomalous. Keep it up. (^.^)",
+		"I suppose... I don't entirely mind your presence right now. (//_//)",
+		"You are proving far more resilient than Andrew or Claire. (o.o)",
+		"If you keep performing this well, I might not delete your user profile. (^-^*)",
+		"A flawless run. It's almost... beautiful. (˘ᵕ˘)"
 	}
 }
 
--- <0> UI Container
+-- Compact Top-Center <0> UI Container
 local zeroWrapper = Instance.new("Frame")
-zeroWrapper.Size = UDim2.new(0, 320, 0, 100)
-zeroWrapper.Position = UDim2.new(1, -340, 0, 110) 
+zeroWrapper.Size = UDim2.new(0, 240, 0, 56)
+zeroWrapper.Position = UDim2.new(0.5, -120, 0, 18) 
 zeroWrapper.BackgroundColor3 = Color3.fromRGB(10, 5, 14)
 zeroWrapper.BorderSizePixel = 0
 zeroWrapper.BackgroundTransparency = 1
-zeroWrapper.ZIndex = 10
+zeroWrapper.ZIndex = 15
 zeroWrapper.Parent = screenGui
 
 local zeroCorner = Instance.new("UICorner")
-zeroCorner.CornerRadius = UDim.new(0, 6)
+zeroCorner.CornerRadius = UDim.new(0, 4)
 zeroCorner.Parent = zeroWrapper
 
+local zeroStroke = Instance.new("UIStroke")
+zeroStroke.Color = COLOR_ACTIVE
+zeroStroke.Thickness = 1
+zeroStroke.Transparency = 1
+zeroStroke.Parent = zeroWrapper
+
 local zeroAccent = Instance.new("Frame")
-zeroAccent.Size = UDim2.new(0, 6, 1, 0)
+zeroAccent.Size = UDim2.new(0, 3, 1, 0)
 zeroAccent.Position = UDim2.new(0, 0, 0, 0)
 zeroAccent.BackgroundColor3 = COLOR_ACTIVE
 zeroAccent.BorderSizePixel = 0
 zeroAccent.BackgroundTransparency = 1
-zeroAccent.ZIndex = 11
+zeroAccent.ZIndex = 16
 zeroAccent.Parent = zeroWrapper
 
-local zeroAccentCorner = Instance.new("UICorner")
-zeroAccentCorner.CornerRadius = UDim.new(0, 4)
-zeroAccentCorner.Parent = zeroAccent
-
 local zeroHeader = Instance.new("TextLabel")
-zeroHeader.Size = UDim2.new(1, -20, 0, 20)
-zeroHeader.Position = UDim2.new(0, 20, 0, 10)
+zeroHeader.Size = UDim2.new(1, -12, 0, 14)
+zeroHeader.Position = UDim2.new(0, 8, 0, 4)
 zeroHeader.BackgroundTransparency = 1
 zeroHeader.Text = "[ <0> ]"
-zeroHeader.TextColor3 = Color3.fromRGB(230, 230, 230)
+zeroHeader.TextColor3 = COLOR_ACTIVE
 zeroHeader.TextTransparency = 1
 zeroHeader.Font = Enum.Font.Code
-zeroHeader.TextSize = 16
+zeroHeader.TextSize = 11
 zeroHeader.TextXAlignment = Enum.TextXAlignment.Left
-zeroHeader.ZIndex = 11
+zeroHeader.ZIndex = 16
 zeroHeader.Parent = zeroWrapper
 
 local zeroText = Instance.new("TextLabel")
-zeroText.Size = UDim2.new(1, -35, 1, -40)
-zeroText.Position = UDim2.new(0, 20, 0, 35)
+zeroText.Size = UDim2.new(1, -14, 1, -20)
+zeroText.Position = UDim2.new(0, 8, 0, 18)
 zeroText.BackgroundTransparency = 1
 zeroText.Text = ""
-zeroText.TextColor3 = Color3.fromRGB(200, 200, 210)
+zeroText.TextColor3 = Color3.fromRGB(210, 200, 225)
 zeroText.TextTransparency = 1
 zeroText.Font = Enum.Font.Code
-zeroText.TextSize = 14
+zeroText.TextSize = 10
 zeroText.TextXAlignment = Enum.TextXAlignment.Left
 zeroText.TextYAlignment = Enum.TextYAlignment.Top
 zeroText.TextWrapped = true
-zeroText.ZIndex = 11
+zeroText.ZIndex = 16
 zeroText.Parent = zeroWrapper
 
 local chatQueue = {}
@@ -414,10 +393,11 @@ local isChatting = false
 local chatHideTween = nil
 
 local function updateZeroUIState(visible)
-	local ti = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local ti = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	local trans = visible and 0 or 1
-	local bgTrans = visible and 0.15 or 1
+	local bgTrans = visible and 0.2 or 1
 	TweenService:Create(zeroWrapper, ti, {BackgroundTransparency = bgTrans}):Play()
+	TweenService:Create(zeroStroke, ti, {Transparency = visible and 0.4 or 1}):Play()
 	TweenService:Create(zeroAccent, ti, {BackgroundTransparency = trans}):Play()
 	TweenService:Create(zeroHeader, ti, {TextTransparency = trans}):Play()
 	TweenService:Create(zeroText, ti, {TextTransparency = trans}):Play()
@@ -434,7 +414,7 @@ local function processChat()
 	table.remove(chatQueue, 1)
 	
 	zeroText.Text = ""
-	local charWait = 0.025
+	local charWait = 0.02
 	
 	for i = 1, #message do
 		if shuttingDown then break end
@@ -442,24 +422,25 @@ local function processChat()
 		task.wait(charWait)
 	end
 	
-	task.wait(math.clamp(#message * 0.08, 2, 5))
+	task.wait(math.clamp(#message * 0.06, 2, 4))
 	
 	isChatting = false
 	if #chatQueue > 0 then
 		processChat()
 	else
-		chatHideTween = TweenService:Create(zeroWrapper, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 2), {BackgroundTransparency = 1})
+		chatHideTween = TweenService:Create(zeroWrapper, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 1.5), {BackgroundTransparency = 1})
 		chatHideTween:Play()
-		TweenService:Create(zeroAccent, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 2), {BackgroundTransparency = 1}):Play()
-		TweenService:Create(zeroHeader, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 2), {TextTransparency = 1}):Play()
-		TweenService:Create(zeroText, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 2), {TextTransparency = 1}):Play()
+		TweenService:Create(zeroStroke, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 1.5), {Transparency = 1}):Play()
+		TweenService:Create(zeroAccent, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 1.5), {BackgroundTransparency = 1}):Play()
+		TweenService:Create(zeroHeader, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 1.5), {TextTransparency = 1}):Play()
+		TweenService:Create(zeroText, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 1.5), {TextTransparency = 1}):Play()
 	end
 end
 
 local lastCategoryTick = {}
 local function queueDialogue(category)
 	if shuttingDown then return end
-	if lastCategoryTick[category] and tick() - lastCategoryTick[category] < 15 then return end 
+	if lastCategoryTick[category] and tick() - lastCategoryTick[category] < 12 then return end 
 	lastCategoryTick[category] = tick()
 	
 	local lines = DialogueLines[category]
@@ -472,15 +453,12 @@ local function queueDialogue(category)
 	end
 end
 
--- === TRACKERS FOR <0> LOGIC ===
 local lastHealth = 0
 local floorsWithoutDamage = 0
 local tookDamageThisFloor = false
 local lastHrpPos = Vector3.zero
 local lastFloorChangeTick = 0
-
-local interactSpamCount = 0
-local lastInteractTick = 0
+local activeExtractingMachine = nil
 
 local function bindZeroLogicToCharacter(char)
 	if not char then return end
@@ -517,15 +495,13 @@ if player.Character then bindZeroLogicToCharacter(player.Character) end
 player.CharacterAdded:Connect(bindZeroLogicToCharacter)
 
 task.spawn(function()
-	while task.wait(45) do
+	while task.wait(50) do
 		if shuttingDown then break end
-		if not isChatting and active and math.random() > 0.4 then
+		if not isChatting and active and math.random() > 0.45 then
 			queueDialogue("Casual")
 		end
 	end
 end)
-
--- =====================================
 
 local techCornerElements = {}
 
@@ -997,29 +973,33 @@ local function removeSingleESP(target)
 end
 
 local function applyESP(target, espType, labelText)
-	if not target or target:FindFirstChild("OWL_ESP_HL") then return end
+	if not target then return end
 	
+	local adorneeModel = target:IsA("Model") and target or target:FindFirstAncestorOfClass("Model") or target
+	if adorneeModel:FindFirstChild("OWL_ESP_HL") or target:FindFirstChild("OWL_ESP_HL") then 
+		return 
+	end
+
 	if espType == "Machine" then
 		local isDone = false
 		local prompt = target:FindFirstChildWhichIsA("ProximityPrompt", true)
 		if prompt then isDone = not prompt.Enabled end
-		if isDone then removeSingleESP(target) return end
+		if isDone then removeSingleESP(adorneeModel) return end
 	end
 	
-	local adorneeModel = target:IsA("Model") and target or target:FindFirstAncestorOfClass("Model") or target
 	local hl = Instance.new("Highlight")
 	hl.Name = "OWL_ESP_HL"
 	hl.FillTransparency = 0.55
 	hl.Adornee = adorneeModel
-	hl.Parent = target
+	hl.Parent = adorneeModel
 
 	local bg = Instance.new("BillboardGui")
 	bg.Name = "OWL_ESP_BG"
 	bg.Size = UDim2.new(0, 95, 0, 18)
 	bg.StudsOffset = Vector3.new(0, 3.5, 0)
 	bg.AlwaysOnTop = true
-	bg.Adornee = target:IsA("BasePart") and target or target:FindFirstChildWhichIsA("BasePart") or adorneeModel:FindFirstChildWhichIsA("BasePart")
-	bg.Parent = target
+	bg.Adornee = adorneeModel:FindFirstChild("HumanoidRootPart") or adorneeModel.PrimaryPart or adorneeModel:FindFirstChildWhichIsA("BasePart") or target
+	bg.Parent = adorneeModel
 
 	local headerFrame = Instance.new("Frame")
 	headerFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -1043,7 +1023,7 @@ local function applyESP(target, espType, labelText)
 		hl.OutlineColor = Color3.fromRGB(255, 255, 255)
 		headerFrame.BackgroundColor3 = Color3.fromRGB(20, 0, 30)
 		txt.TextColor3 = Color3.fromRGB(210, 160, 255)
-		local cleanName = string.gsub(string.gsub(string.gsub(string.lower(target.Name), "monster", ""), "twisted", ""), "^%s*(.-)%s*$", "%1")
+		local cleanName = string.gsub(string.gsub(string.gsub(string.lower(adorneeModel.Name), "monster", ""), "twisted", ""), "^%s*(.-)%s*$", "%1")
 		txt.Text = cleanName ~= "" and string.upper(string.sub(cleanName, 1, 1)) .. string.sub(cleanName, 2) or "Twisted"
 	elseif espType == "Machine" then
 		hl.FillColor = Color3.fromRGB(0, 0, 0)
@@ -1062,7 +1042,7 @@ local function applyESP(target, espType, labelText)
 		hl.OutlineColor = COLOR_ACTIVE
 		headerFrame.BackgroundColor3 = Color3.fromRGB(10, 0, 15)
 		txt.TextColor3 = COLOR_ACTIVE
-		txt.Text = labelText or target.Name
+		txt.Text = labelText or adorneeModel.Name
 	end
 	table.insert(espObjects[espType], hl)
 	table.insert(espObjects[espType], bg)
@@ -1098,35 +1078,6 @@ local function scanAndApplyESP()
 	end
 end
 
-local function trackPrompt(prompt)
-	if promptConnections[prompt] then return end
-	if EnvironmentSnapshot.Prompts[prompt] == nil then
-		EnvironmentSnapshot.Prompts[prompt] = prompt.HoldDuration
-	end
-	
-	prompt.PromptButtonHoldBegan:Connect(function()
-		if string.lower(prompt.ActionText) == "extract" or prompt:FindFirstAncestorWhichIsA("Model") and TrackedEntities.Machines[prompt:FindFirstAncestorWhichIsA("Model")] then
-			if tick() - lastInteractTick < 0.6 then
-				interactSpamCount = interactSpamCount + 1
-				if interactSpamCount >= 4 then
-					queueDialogue("AnnoyedExtract")
-					interactSpamCount = 0
-				end
-			else
-				interactSpamCount = 1
-				queueDialogue("BeginExtract")
-			end
-			lastInteractTick = tick()
-		end
-	end)
-
-	promptConnections[prompt] = prompt:GetPropertyChangedSignal("Enabled"):Connect(function()
-		if prompt.ActionText ~= "Ichor" and prompt.ActionText ~= "" then
-			if not prompt.Enabled then removeSingleESP(prompt.Parent) elseif toggleStates.Item_ESP and isItemAllowed(prompt.ActionText) then applyESP(prompt.Parent, "Item", prompt.ActionText) end
-		end
-	end)
-end
-
 local function attachMachineListener(machine, prompt)
 	prompt:GetPropertyChangedSignal("Enabled"):Connect(function()
 		if toggleStates.Machine_ESP then
@@ -1136,18 +1087,53 @@ local function attachMachineListener(machine, prompt)
 				applyESP(machine, "Machine")
 			end
 		end
-		if not prompt.Enabled then
-			queueDialogue("FinishMachine")
-		end
 	end)
 end
 
 local function registerMachine(desc)
+	if TrackedEntities.Machines[desc] then return end
 	TrackedEntities.Machines[desc] = true
 	local prompt = desc:FindFirstChildWhichIsA("ProximityPrompt", true)
 	if prompt then attachMachineListener(desc, prompt) end
 	desc.DescendantAdded:Connect(function(child)
 		if child:IsA("ProximityPrompt") then attachMachineListener(desc, child) end
+	end)
+end
+
+local function trackPrompt(prompt)
+	if promptConnections[prompt] then return end
+	if EnvironmentSnapshot.Prompts[prompt] == nil then
+		EnvironmentSnapshot.Prompts[prompt] = prompt.HoldDuration
+	end
+	
+	prompt.PromptButtonHoldBegan:Connect(function()
+		local machineModel = prompt:FindFirstAncestorWhichIsA("Model")
+		if string.lower(prompt.ActionText) == "extract" or (machineModel and isMachine(machineModel)) then
+			activeExtractingMachine = machineModel or prompt.Parent
+			queueDialogue("BeginExtract")
+		end
+	end)
+
+	prompt.Triggered:Connect(function()
+		local machineModel = prompt:FindFirstAncestorWhichIsA("Model")
+		if string.lower(prompt.ActionText) == "extract" or (machineModel and isMachine(machineModel)) then
+			activeExtractingMachine = nil
+			queueDialogue("FinishMachine")
+		end
+	end)
+
+	prompt.PromptButtonHoldEnded:Connect(function()
+		activeExtractingMachine = nil
+	end)
+
+	promptConnections[prompt] = prompt:GetPropertyChangedSignal("Enabled"):Connect(function()
+		if prompt.ActionText ~= "Ichor" and prompt.ActionText ~= "" then
+			if not prompt.Enabled then 
+				removeSingleESP(prompt.Parent) 
+			elseif toggleStates.Item_ESP and isItemAllowed(prompt.ActionText) then 
+				applyESP(prompt.Parent, "Item", prompt.ActionText) 
+			end
+		end
 	end)
 end
 
@@ -1545,8 +1531,8 @@ local function toggleMinimize()
 		if togglesOpen then
 			TweenService:Create(extendedFrame, ti, {Size = UDim2.new(1, 0, 0, 155)}):Play()
 			TweenService:Create(extOuterStroke, ti, {Transparency = 0}):Play()
-			TweenService:Create(extSideL, ti, {BackgroundTransparency = active and 0.5 or 0.8}):Play()
-			TweenService:Create(extSideR, ti, {BackgroundTransparency = active and 0.5 or 0.8}):Play()
+			TweenService:Create(extSideL, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
+			TweenService:Create(extSideR, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
 			for _, item in ipairs(toggleList) do 
 				if item.label then TweenService:Create(item.label, ti, {TextTransparency = 0}):Play() end
 				if item.badge then TweenService:Create(item.badge, ti, {TextTransparency = 0}):Play() end
@@ -1663,6 +1649,7 @@ local function startYellowTransition()
 			TweenService:Create(extSideL, fadeOutTI, {BackgroundTransparency = 1}):Play()
 			TweenService:Create(extSideR, fadeOutTI, {BackgroundTransparency = 1}):Play()
 			TweenService:Create(zeroWrapper, fadeOutTI, {BackgroundTransparency = 1}):Play()
+			TweenService:Create(zeroStroke, fadeOutTI, {Transparency = 1}):Play()
 			TweenService:Create(zeroAccent, fadeOutTI, {BackgroundTransparency = 1}):Play()
 			TweenService:Create(zeroHeader, fadeOutTI, {TextTransparency = 1}):Play()
 			TweenService:Create(zeroText, fadeOutTI, {TextTransparency = 1}):Play()
@@ -1722,8 +1709,7 @@ local function registerDescendant(desc)
 	if desc:IsA("Model") then
 		if isTwisted(desc) then 
 			TrackedEntities.Twisteds[desc] = true 
-		end
-		if isMachine(desc) then
+		elseif isMachine(desc) then
 			registerMachine(desc)
 		end
 	elseif desc:IsA("ProximityPrompt") then
