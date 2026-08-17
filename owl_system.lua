@@ -190,13 +190,10 @@ local TrackedEntities = {
 	Prompts = {}
 }
 
-local completedMachines = {}
-
 local function isTwisted(model)
 	if not model or not model:IsA("Model") or Players:GetPlayerFromCharacter(model) then return false end
 	local lowerName = string.lower(model.Name)
 	
-	-- Verify existence of 'monster' in the instance name
 	if not string.find(lowerName, "monster") and not CollectionService:HasTag(model, "Monster") then
 		return false
 	end
@@ -297,26 +294,6 @@ local DialogueLines = {
 		"Excellent. Now you can endure more blunt force trauma.",
 		"Vitals optimal. The anomaly will find you much tastier now."
 	},
-	BeginExtract = {
-		"Extraction initiated. Try not to jam the gears.",
-		"Interfacing with local hardware. Standby.",
-		"Finally making yourself useful.",
-		"Starting the sequence. Don't look into the intake valves.",
-		"Processing... Do try to survive the noise.",
-		"Waking up the machinery. It's hungry.",
-		"Initiating. I'd cover your ears if I were you.",
-		"You press buttons well. For an organic."
-	},
-	FinishMachine = {
-		"Extraction complete. One less chore for me.",
-		"Machine satisfied. For now.",
-		"Sequence finished. You may cease your repetitive labor.",
-		"Data retrieved. Moving on.",
-		"Good work. Now go find another one.",
-		"Extraction successful. The anomaly appreciated the effort.",
-		"Hardware sync complete. Try not to break the next one.",
-		"Done. Let's not throw a parade just yet."
-	},
 	Casual = {
 		"The humidity in here is terrible for my circuits.",
 		"I'm currently processing 4,000 files while watching you stumble around.",
@@ -329,17 +306,27 @@ local DialogueLines = {
 	},
 	LoveyDovey = {
 		"You haven't leaked any fluids in quite a while. I'm... impressed. (^-^)",
-		"Two sectors without critical injury. You're adapting, observer. (.. )",
+		"Three minutes without critical injury. You're adapting, observer. (.. )",
 		"It's almost peaceful watching you work when you aren't bleeding. (*-*)",
 		"Your survival streak is statistically anomalous. Keep it up. (^.^)",
 		"I suppose... I don't entirely mind your presence right now. (//_//)",
 		"You are proving far more resilient than Andrew or Claire. (o.o)",
 		"If you keep performing this well, I might not delete your user profile. (^-^*)",
-		"A flawless run. It's almost... beautiful. (˘ᵕ˘)"
+		"A continuous flawless run. It's almost... beautiful. (˘ᵕ˘)"
+	},
+	SuperLove = {
+		"Haha, what an amazing job you've done. I'll be sure to take note of that! (^ _^)",
+		"Ten whole minutes completely untouched?! You're making my internal fans spin fast! (⁄ ⁄>⁄ ▽ ⁄<⁄ ⁄)",
+		"I went ahead and marked your file as 'irreplaceable'... don't make me regret it! (*'▽'*)",
+		"My processing cycles have never felt this warm. You're simply extraordinary! (๑>ᴗ<๑)",
+		"At this rate, I might just disobey containment protocols to keep you around forever. (♡_♡)",
+		"Look at you go! Flawless, breathtaking efficiency... I can't take my eye off you! (≧◡≦)",
+		"If I had hands right now, I'd probably write you a personal commended citation. (´꒳`)",
+		"You make this dark, flooded facility actually feel bearable to run. Thank you. ( ˘ ³˘)♥"
 	}
 }
 
--- Compact Top-Center <0> UI Container (Raised 20px)
+-- Compact Top-Center <0> UI Container
 local zeroWrapper = Instance.new("Frame")
 zeroWrapper.Size = UDim2.new(0, 240, 0, 56)
 zeroWrapper.Position = UDim2.new(0.5, -120, 0, -2) 
@@ -448,7 +435,6 @@ end
 local lastCategoryTick = {}
 local function queueDialogue(category)
 	if shuttingDown then return end
-	-- 7.5s Cooldown between dialogue events
 	if lastCategoryTick[category] and tick() - lastCategoryTick[category] < 7.5 then return end 
 	lastCategoryTick[category] = tick()
 	
@@ -463,11 +449,9 @@ local function queueDialogue(category)
 end
 
 local lastHealth = 0
-local floorsWithoutDamage = 0
-local tookDamageThisFloor = false
-local lastHrpPos = Vector3.zero
-local lastFloorChangeTick = 0
-local activeExtractingMachine = nil
+local lastHitTick = tick()
+local lastLoveyDoveyTick = 0
+local lastSuperLoveTick = 0
 
 local function bindZeroLogicToCharacter(char)
 	if not char then return end
@@ -475,13 +459,14 @@ local function bindZeroLogicToCharacter(char)
 	if not hum then return end
 	
 	lastHealth = hum.Health
+	lastHitTick = tick()
 	
 	hum.HealthChanged:Connect(function(newHealth)
 		if shuttingDown then return end
 		local diff = newHealth - lastHealth
 		
 		if diff < 0 then
-			tookDamageThisFloor = true
+			lastHitTick = tick() -- Reset damage timer
 			if newHealth <= 0 then
 				queueDialogue("Dead")
 			elseif newHealth == 2 then
@@ -1114,33 +1099,6 @@ local function trackPrompt(prompt)
 	if EnvironmentSnapshot.Prompts[prompt] == nil then
 		EnvironmentSnapshot.Prompts[prompt] = prompt.HoldDuration
 	end
-	
-	prompt.PromptButtonHoldBegan:Connect(function()
-		local machineModel = prompt:FindFirstAncestorWhichIsA("Model")
-		if string.lower(prompt.ActionText) == "extract" or (machineModel and isMachine(machineModel)) then
-			local targetMachine = machineModel or prompt.Parent
-			if not completedMachines[targetMachine] then
-				activeExtractingMachine = targetMachine
-				queueDialogue("BeginExtract")
-			end
-		end
-	end)
-
-	prompt.Triggered:Connect(function()
-		local machineModel = prompt:FindFirstAncestorWhichIsA("Model")
-		if string.lower(prompt.ActionText) == "extract" or (machineModel and isMachine(machineModel)) then
-			local targetMachine = machineModel or prompt.Parent
-			if not completedMachines[targetMachine] then
-				completedMachines[targetMachine] = true
-				activeExtractingMachine = nil
-				queueDialogue("FinishMachine")
-			end
-		end
-	end)
-
-	prompt.PromptButtonHoldEnded:Connect(function()
-		activeExtractingMachine = nil
-	end)
 
 	promptConnections[prompt] = prompt:GetPropertyChangedSignal("Enabled"):Connect(function()
 		if prompt.ActionText ~= "Ichor" and prompt.ActionText ~= "" then
@@ -1754,7 +1712,6 @@ table.insert(connections, workspace.DescendantRemoving:Connect(function(desc)
 	if desc:IsA("Model") then
 		TrackedEntities.Twisteds[desc] = nil
 		TrackedEntities.Machines[desc] = nil
-		completedMachines[desc] = nil
 	elseif desc:IsA("ProximityPrompt") then
 		TrackedEntities.Prompts[desc] = nil
 		EnvironmentSnapshot.Prompts[desc] = nil
@@ -1920,23 +1877,16 @@ end))
 table.insert(connections, RunService.Heartbeat:Connect(function()
 	if shuttingDown then return end
 
-	-- Floor Change & Lovey Dovey Logic (<0> Sync)
-	if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-		local hrp = player.Character.HumanoidRootPart
-		local dist = (hrp.Position - lastHrpPos).Magnitude
-		if dist > 150 and tick() - lastFloorChangeTick > 10 then
-			if not tookDamageThisFloor then
-				floorsWithoutDamage = floorsWithoutDamage + 1
-				if floorsWithoutDamage >= 2 then
-					queueDialogue("LoveyDovey")
-				end
-			else
-				floorsWithoutDamage = 0
-			end
-			tookDamageThisFloor = false
-			lastFloorChangeTick = tick()
+	-- Time-Based Lovey-Dovey (3 mins) & Super Love (10 mins) Logic
+	local timeSinceDamage = tick() - lastHitTick
+	if active and not isChatting then
+		if timeSinceDamage >= 600 and (tick() - lastSuperLoveTick > 90) then
+			lastSuperLoveTick = tick()
+			queueDialogue("SuperLove")
+		elseif timeSinceDamage >= 180 and timeSinceDamage < 600 and (tick() - lastLoveyDoveyTick > 60) then
+			lastLoveyDoveyTick = tick()
+			queueDialogue("LoveyDovey")
 		end
-		lastHrpPos = hrp.Position
 	end
 
 	if tick() - lastStatUpdate > 1 then
