@@ -174,7 +174,7 @@ local promptConnections = {}
 
 local toggleStates = {
 	Fullbright = false,
-	Monster_ESP = false,
+	Twisted_ESP = false,
 	Machine_ESP = false,
 	Item_ESP = false,
 	Player_ESP = false,
@@ -189,6 +189,54 @@ local TrackedEntities = {
 	Machines = {},
 	Prompts = {}
 }
+
+local function isTwisted(model)
+	if not model or not model:IsA("Model") or Players:GetPlayerFromCharacter(model) then return false end
+	if CollectionService:HasTag(model, "Twisted") or CollectionService:HasTag(model, "Monster") then return true end
+	
+	local lowerName = string.lower(model.Name)
+	if string.find(lowerName, "twisted") then return true end
+	
+	for filterKey, enabled in pairs(monsterFilters) do
+		if enabled and string.find(lowerName, filterKey) then
+			return true
+		end
+	end
+	
+	local cleanName = string.gsub(lowerName, "monster", "")
+	cleanName = string.gsub(cleanName, "twisted", "")
+	cleanName = string.match(cleanName, "^%s*(.-)%s*$") or cleanName
+
+	if monsterFilters[cleanName] ~= nil then
+		return monsterFilters[cleanName] == true
+	end
+	
+	return false
+end
+
+local function isMachine(model)
+	if not model or not model.Parent then return false end
+	if model:IsA("Model") then
+		if CollectionService:HasTag(model, "Generator") or CollectionService:HasTag(model, "Machine") then return true end
+		local lname = string.lower(model.Name)
+		if string.find(lname, "generator") or string.find(lname, "machine") or string.find(lname, "extractor") then
+			return true
+		end
+		local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true)
+		if prompt and (string.lower(prompt.ActionText) == "extract" or string.find(string.lower(prompt.ObjectText or ""), "machine") or string.find(string.lower(prompt.ObjectText or ""), "generator")) then
+			return true
+		end
+	end
+	return false
+end
+
+local function isItemAllowed(name)
+	local lName = string.lower(name)
+	for filterKey, enabled in pairs(itemFilters) do
+		if enabled and string.find(lName, filterKey) then return true end
+	end
+	return false
+end
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "TerminalIndicator"
@@ -433,7 +481,6 @@ local lastFloorChangeTick = 0
 
 local interactSpamCount = 0
 local lastInteractTick = 0
-local activeMachinePrompts = {}
 
 local function bindZeroLogicToCharacter(char)
 	if not char then return end
@@ -1027,7 +1074,7 @@ local function removeESPType(espType)
 end
 
 local function scanAndApplyESP()
-	if toggleStates.Monster_ESP then
+	if toggleStates.Twisted_ESP then
 		for desc in pairs(TrackedEntities.Twisteds) do
 			if isTwisted(desc) then applyESP(desc, "Monster") end
 		end
@@ -1125,7 +1172,7 @@ local function executeToggleLogic(id, state)
 		if not state then
 			restoreLighting()
 		end
-	elseif id == "Monster_ESP" then if state then scanAndApplyESP() else removeESPType("Monster") end
+	elseif id == "Twisted_ESP" then if state then scanAndApplyESP() else removeESPType("Monster") end
 	elseif id == "Machine_ESP" then if state then scanAndApplyESP() else removeESPType("Machine") end
 	elseif id == "Item_ESP" then if state then scanAndApplyESP() else removeESPType("Item") end
 	elseif id == "Player_ESP" then if state then scanAndApplyESP() else removeESPType("Player") end
@@ -1226,7 +1273,7 @@ local function createFilterMenu(titleText, filterTable, filterList)
 				itemBtn.Text = (filterTable[key] and "[#] " or "[ ] ") .. name
 				itemBtn.TextColor3 = filterTable[key] and Color3.fromRGB(210, 160, 255) or Color3.fromRGB(100, 100, 110)
 
-				if titleText == "Twisted Filter" and toggleStates.Monster_ESP then removeESPType("Monster") scanAndApplyESP()
+				if titleText == "Twisted Filter" and toggleStates.Twisted_ESP then removeESPType("Monster") scanAndApplyESP()
 				elseif titleText == "Item Filter" and toggleStates.Item_ESP then removeESPType("Item") scanAndApplyESP() end
 			end
 		end)
@@ -1337,7 +1384,7 @@ local function createToggle(text, id, order, filterData)
 end
 
 createToggle("Fullbright", "Fullbright", 1)
-createToggle("Monster_ESP", "Monster_ESP", 2, {title = "Twisted Filter", table = monsterFilters, list = MonsterList})
+createToggle("Twisted_ESP", "Twisted_ESP", 2, {title = "Twisted Filter", table = monsterFilters, list = MonsterList})
 createToggle("Machine_ESP", "Machine_ESP", 3)
 createToggle("Item_ESP", "Item_ESP", 4, {title = "Item Filter", table = itemFilters, list = ESPItemList})
 createToggle("Player_ESP", "Player_ESP", 5)
@@ -1498,8 +1545,8 @@ local function toggleMinimize()
 		if togglesOpen then
 			TweenService:Create(extendedFrame, ti, {Size = UDim2.new(1, 0, 0, 155)}):Play()
 			TweenService:Create(extOuterStroke, ti, {Transparency = 0}):Play()
-			TweenService:Create(extSideL, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
-			TweenService:Create(extSideR, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
+			TweenService:Create(extSideL, ti, {BackgroundTransparency = active and 0.5 or 0.8}):Play()
+			TweenService:Create(extSideR, ti, {BackgroundTransparency = active and 0.5 or 0.8}):Play()
 			for _, item in ipairs(toggleList) do 
 				if item.label then TweenService:Create(item.label, ti, {TextTransparency = 0}):Play() end
 				if item.badge then TweenService:Create(item.badge, ti, {TextTransparency = 0}):Play() end
@@ -1673,24 +1720,32 @@ end))
 
 local function registerDescendant(desc)
 	if desc:IsA("Model") then
-		if isTwisted(desc) then TrackedEntities.Twisteds[desc] = true end
-		
-		local lname = string.lower(desc.Name)
-		if CollectionService:HasTag(desc, "Generator") or (lname == "generator" or lname == "machine" or lname == "extractor") and not desc:FindFirstAncestorWhichIsA("Model") then
+		if isTwisted(desc) then 
+			TrackedEntities.Twisteds[desc] = true 
+		end
+		if isMachine(desc) then
 			registerMachine(desc)
 		end
 	elseif desc:IsA("ProximityPrompt") then
 		TrackedEntities.Prompts[desc] = true
 		trackPrompt(desc)
 		if toggleStates.Instant_Interact then desc.HoldDuration = 0 end
-		if toggleStates.Item_ESP and desc.ActionText ~= "Ichor" and desc.ActionText ~= "" and desc.Enabled and isItemAllowed(desc.ActionText) then task.wait(0.1) applyESP(desc.Parent, "Item", desc.ActionText) end
+		if toggleStates.Item_ESP and desc.ActionText ~= "Ichor" and desc.ActionText ~= "" and desc.Enabled and isItemAllowed(desc.ActionText) then 
+			task.wait(0.1) 
+			applyESP(desc.Parent, "Item", desc.ActionText) 
+		end
+		
+		local parentModel = desc:FindFirstAncestorWhichIsA("Model")
+		if parentModel and isMachine(parentModel) and not TrackedEntities.Machines[parentModel] then
+			registerMachine(parentModel)
+		end
 	end
 end
 
 table.insert(connections, workspace.DescendantAdded:Connect(function(desc)
 	registerDescendant(desc)
-	if toggleStates.Monster_ESP and isTwisted(desc) then task.wait(0.15) applyESP(desc, "Monster") end
-	if toggleStates.Machine_ESP and TrackedEntities.Machines[desc] then task.wait(0.15) applyESP(desc, "Machine") end
+	if toggleStates.Twisted_ESP and isTwisted(desc) then task.wait(0.15) applyESP(desc, "Monster") end
+	if toggleStates.Machine_ESP and (TrackedEntities.Machines[desc] or isMachine(desc)) then task.wait(0.15) applyESP(desc, "Machine") end
 end))
 
 table.insert(connections, workspace.DescendantRemoving:Connect(function(desc)
