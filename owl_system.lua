@@ -335,7 +335,6 @@ local DialogueLines = {
 	}
 }
 
--- Compact Top-Center <0> UI Container (Raised & Cleaned)
 local zeroWrapper = Instance.new("Frame")
 zeroWrapper.Size = UDim2.new(0, 240, 0, 56)
 zeroWrapper.Position = UDim2.new(0.5, -120, 0, -2) 
@@ -512,7 +511,7 @@ local techCornerElements = {}
 local function buildCornerWidget(parentFrame, isTop, isLeft)
 	local cornerSize = 12
 	local thickness = 2
-	local offset = 1 -- Pulled tighter to the frame bounds
+	local offset = -4 
 
 	local cornerFrame = Instance.new("Frame")
 	cornerFrame.Size = UDim2.new(0, cornerSize, 0, cornerSize)
@@ -574,7 +573,7 @@ radarOuterStroke.Parent = radarFrame
 local function createRadarFlushCorner(isTop, isLeft)
 	local cornerSize = 12
 	local thickness = 2
-	local offset = -2 -- Pushed outward away from the center
+	local offset = -6 
 	
 	local cornerFrame = Instance.new("Frame")
 	cornerFrame.Size = UDim2.new(0, cornerSize, 0, cornerSize)
