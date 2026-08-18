@@ -192,15 +192,10 @@ local TrackedEntities = {
 
 local function isTwisted(model)
 	if not model or not model:IsA("Model") or Players:GetPlayerFromCharacter(model) then return false end
-	local lowerName = string.lower(model.Name)
+	if CollectionService:HasTag(model, "Twisted") or CollectionService:HasTag(model, "Monster") then return true end
 	
-	if not string.find(lowerName, "monster") and not CollectionService:HasTag(model, "Monster") then
-		return false
-	end
-
-	if CollectionService:HasTag(model, "Twisted") or CollectionService:HasTag(model, "Monster") then 
-		return true 
-	end
+	local lowerName = string.lower(model.Name)
+	if string.find(lowerName, "twisted") or string.find(lowerName, "monster") then return true end
 	
 	for filterKey, enabled in pairs(monsterFilters) do
 		if enabled and string.find(lowerName, filterKey) then
@@ -233,6 +228,7 @@ end
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "TerminalIndicator"
 screenGui.ResetOnSpawn = false
+screenGui.DisplayOrder = 100
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = parentTarget
 
@@ -825,7 +821,7 @@ mainFrame.Position = UDim2.new(1, -144, 0, 24)
 mainFrame.BackgroundColor3 = COLOR_BG
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
-mainFrame.Parent = screenGui
+mainFrame.Parent = gui
 
 local mainCorner = Instance.new("UICorner")
 mainCorner.CornerRadius = UDim.new(0, 4)
@@ -993,7 +989,7 @@ statHudFrame.BorderSizePixel = 0
 statHudFrame.Visible = toggleStates.Stat_HUD
 statHudFrame.Active = true
 statHudFrame.Draggable = true
-statHudFrame.Parent = screenGui
+statHudFrame.Parent = gui
 
 local statHudCorner = Instance.new("UICorner")
 statHudCorner.CornerRadius = UDim.new(0, 4)
@@ -1255,7 +1251,7 @@ local function createFilterMenu(titleText, filterTable, filterList)
 	fFrame.Active = true
 	fFrame.Draggable = true
 	fFrame.ZIndex = 10
-	fFrame.Parent = screenGui
+	fFrame.Parent = gui
 	activeFilterMenu = fFrame
 
 	local fCorner = Instance.new("UICorner")
@@ -1792,28 +1788,28 @@ local function registerDescendant(desc)
 	elseif desc:IsA("ProximityPrompt") then
 		TrackedEntities.Prompts[desc] = true
 		
-		if env.P[d] == nil then
-			env.P[d] = d.HoldDuration
+		if env.P[desc] == nil then
+			env.P[desc] = desc.HoldDuration
 		end
 
-		pCons[d] = d:GetPropertyChangedSignal("Enabled"):Connect(function()
-			if d.ActionText ~= "Ichor" and d.ActionText ~= "" then
-				if not d.Enabled then 
-					rmESP(d.Parent) 
-				elseif cfg.Item_ESP and isItm(d.ActionText) then 
-					aESP(d.Parent, "Item", d.ActionText) 
+		promptConnections[desc] = desc:GetPropertyChangedSignal("Enabled"):Connect(function()
+			if desc.ActionText ~= "Ichor" and desc.ActionText ~= "" then
+				if not desc.Enabled then 
+					removeSingleESP(desc.Parent) 
+				elseif cfg.Item_ESP and isItm(desc.ActionText) then 
+					applyESP(desc.Parent, "Item", desc.ActionText) 
 				end
 			end
 		end)
 		
-		if cfg.Instant_Interact then d.HoldDuration = 0 end
-		if cfg.Item_ESP and d.ActionText ~= "Ichor" and d.ActionText ~= "" and d.Enabled and isItm(d.ActionText) then 
+		if cfg.Instant_Interact then desc.HoldDuration = 0 end
+		if cfg.Item_ESP and desc.ActionText ~= "Ichor" and desc.ActionText ~= "" and desc.Enabled and isItm(desc.ActionText) then 
 			task.wait(0.1) 
-			aESP(d.Parent, "Item", d.ActionText) 
+			applyESP(desc.Parent, "Item", desc.ActionText) 
 		end
 		
-		local pM = d:FindFirstAncestorWhichIsA("Model")
-		if pM and isMa(pM) and not TrackedEntities.Machines[pM] then
+		local pM = desc:FindFirstAncestorWhichIsA("Model")
+		if pM and isMachine(pM) and not TrackedEntities.Machines[pM] then
 			TrackedEntities.Machines[pM] = true
 		end
 	end
@@ -1821,8 +1817,8 @@ end
 
 table.insert(cons, workspace.DescendantAdded:Connect(function(d)
 	registerDescendant(d)
-	if cfg.Twisted_ESP and isTw(d) then task.wait(0.15) aESP(d, "Monster") end
-	if cfg.Machine_ESP and (TrackedEntities.Machines[d] or isMa(d)) then task.wait(0.15) aESP(d, "Machine") end
+	if cfg.Twisted_ESP and isTw(d) then task.wait(0.15) applyESP(d, "Monster") end
+	if cfg.Machine_ESP and (TrackedEntities.Machines[d] or isMa(d)) then task.wait(0.15) applyESP(d, "Machine") end
 end))
 
 table.insert(cons, workspace.DescendantRemoving:Connect(function(d)
@@ -1840,12 +1836,12 @@ table.insert(cons, workspace.DescendantRemoving:Connect(function(d)
 end))
 
 for _, d in ipairs(workspace:GetDescendants()) do
-	rDesc(d)
+	registerDescendant(d)
 end
 
-uUI()
-sAESP()
-uPrmpt()
+updateUI()
+scanAndApplyESP()
+updateProximityPrompts()
 
 local lRTk = 0
 
@@ -1969,14 +1965,14 @@ local function executeRadarTick()
 	end
 end
 
-table.insert(connections, RunService.Stepped:Connect(function()
+table.insert(cons, rs.Stepped:Connect(function()
 	if shuttingDown then return end
 	if active then
 		applyAntiSlip(true)
 	end
 end))
 
-table.insert(connections, RunService.RenderStepped:Connect(function()
+table.insert(cons, rs.RenderStepped:Connect(function()
 	if shuttingDown then
 		radarWrapper.Visible = false
 		return
@@ -1991,25 +1987,25 @@ table.insert(connections, RunService.RenderStepped:Connect(function()
 	end
 end))
 
-table.insert(connections, RunService.Heartbeat:Connect(function()
+table.insert(cons, rs.Heartbeat:Connect(function()
 	if shuttingDown then return end
 
-	local timeSinceDamage = tick() - lastHitTick
+	local tSD = tick() - lHTk
 	if active and not isChatting then
-		if timeSinceDamage >= 900 and (tick() - lastSuperLoveTick > 120) then
-			lastSuperLoveTick = tick()
-			queueDialogue("Affec2")
-		elseif timeSinceDamage >= 300 and timeSinceDamage < 900 and (tick() - lastAffec1Tick > 90) then
-			lastAffec1Tick = tick()
-			queueDialogue("Affec1")
+		if tSD >= 900 and (tick() - lSLTk > 120) then
+			lSLTk = tick()
+			qDiag("Affec2")
+		elseif tSD >= 300 and tSD < 900 and (tick() - lLDTk > 90) then
+			lLDTk = tick()
+			qDiag("Affec1")
 		end
 	end
 
-	if tick() - lastStatUpdate > 1 then
-		lastStatUpdate = tick()
+	if tick() - lSU > 1 then
+		lSU = tick()
 		
 		if cfg.Player_ESP then
-			for _, p in ipairs(Players:GetPlayers()) do
+			for _, p in ipairs(pls:GetPlayers()) do
 				if p ~= player and p.Character then applyESP(p.Character, "Player", p.DisplayName or p.Name) end
 			end
 		end
@@ -2023,7 +2019,7 @@ table.insert(connections, RunService.Heartbeat:Connect(function()
 			
 			for prompt in pairs(TrackedEntities.Prompts) do
 				if prompt.Enabled and prompt.ActionText ~= "Ichor" and prompt.ActionText ~= "" then
-					if StatHudValuables[prompt.ActionText] then 
+					if sVals[prompt.ActionText] then 
 						itemsFound[prompt.ActionText] = (itemsFound[prompt.ActionText] or 0) + 1 
 					end
 				end
@@ -2051,17 +2047,17 @@ table.insert(connections, RunService.Heartbeat:Connect(function()
 	end
 
 	if cfg.Fullbright then
-		Lighting.Ambient = Color3.fromRGB(110, 110, 115)
-		Lighting.OutdoorAmbient = Color3.fromRGB(110, 110, 115)
-		Lighting.GlobalShadows = false
-		Lighting.ExposureCompensation = EnvironmentSnapshot.Lighting.ExposureCompensation + 0.8
+		lgt.Ambient = Color3.fromRGB(110, 110, 115)
+		lgt.OutdoorAmbient = Color3.fromRGB(110, 110, 115)
+		lgt.GlobalShadows = false
+		lgt.ExposureCompensation = env.L.ExposureCompensation + 0.8
 	end
 
 	if cfg.Auto_Escape then
 		local squirmUI = pgui:FindFirstChild("TwistedSquirmEscapeUI")
 		if squirmUI and squirmUI.Enabled and (tick() - lastEscapeTap > 0.05) then
 			lastEscapeTap = tick()
-			pcall(function() VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game) task.wait(0.01) VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game) end)
+			pcall(function() vim:SendKeyEvent(true, Enum.KeyCode.Space, false, game) task.wait(0.01) vim:SendKeyEvent(false, Enum.KeyCode.Space, false, game) end)
 		end
 	end
 end))
