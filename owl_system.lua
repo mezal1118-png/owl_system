@@ -335,7 +335,7 @@ local DialogueLines = {
 	}
 }
 
--- Compact Top-Center <0> UI Container (Raised 20px)
+-- Compact Top-Center <0> UI Container (Raised & Cleaned)
 local zeroWrapper = Instance.new("Frame")
 zeroWrapper.Size = UDim2.new(0, 240, 0, 56)
 zeroWrapper.Position = UDim2.new(0.5, -120, 0, -2) 
@@ -512,7 +512,7 @@ local techCornerElements = {}
 local function buildCornerWidget(parentFrame, isTop, isLeft)
 	local cornerSize = 12
 	local thickness = 2
-	local offset = 4
+	local offset = 1 -- Pulled tighter to the frame bounds
 
 	local cornerFrame = Instance.new("Frame")
 	cornerFrame.Size = UDim2.new(0, cornerSize, 0, cornerSize)
@@ -574,7 +574,7 @@ radarOuterStroke.Parent = radarFrame
 local function createRadarFlushCorner(isTop, isLeft)
 	local cornerSize = 12
 	local thickness = 2
-	local offset = 8 
+	local offset = -2 -- Pushed outward away from the center
 	
 	local cornerFrame = Instance.new("Frame")
 	cornerFrame.Size = UDim2.new(0, cornerSize, 0, cornerSize)
@@ -895,11 +895,6 @@ scanlineGrad.Color = ColorSequence.new({
 	ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 25))
 })
 scanlineGrad.Parent = scanline
-
-buildCornerWidget(zeroWrapper, true, true)
-buildCornerWidget(zeroWrapper, true, false)
-buildCornerWidget(zeroWrapper, false, true)
-buildCornerWidget(zeroWrapper, false, false)
 
 buildCornerWidget(mainFrame, true, true)
 buildCornerWidget(mainFrame, true, false)
