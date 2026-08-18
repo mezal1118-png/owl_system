@@ -277,7 +277,7 @@ local DialogueLines = {
 		"Please wrap yourself in plastic before the final blow. Think of the janitors.",
 		"I've stopped recording your progress. There's no point anymore.",
 		"I hope you enjoyed your brief, pointless existence.",
-		"You are exactly one minor miscalculation away from complete structural collapse.",
+		"You are one tiny misstep away from a very embarrassing demise.",
 		"You are exactly one bad choice away from being scraped off the floor.",
 		"I'm already crossing your name off the roster to save time.",
 		"If you die now, I'm the one who has to clean up the resulting mess.",
@@ -291,7 +291,7 @@ local DialogueLines = {
 		"I am currently guessing exactly where you're going to fall over.",
 		"Any last words? Oh, wait, your vocal cords are crushed. Never mind.",
 		"The next hit will be lethal. Try to make it entertaining.",
-		"The test results are predicting your immediate demise. Let's prove them right."
+		"I'm assuming this is the part where you dramatically collapse."
 	},
 	Dead = {
 		"I told you to be careful. You never listen.",
@@ -311,7 +311,7 @@ local DialogueLines = {
 		"I am adding 'cannot survive a simple hit' to your file.",
 		"You finally stopped moving. Thank goodness.",
 		"I'm putting your remains in the trash bin.",
-		"Please refrain from decomposing near the ventilation shafts.",
+		"I would ask you to leave, but you're sort of stuck to the floor now.",
 		"You died as you lived. Disappointingly.",
 		"I would pretend to be sad, but I simply don't care."
 	},
@@ -323,10 +323,10 @@ local DialogueLines = {
 		"I'm sure that makes you feel much better. It doesn't.",
 		"I've seen corpses look healthier than you.",
 		"A bandage? That's adorable. It won't save you.",
-		"I suppose that delays the inevitable by a dozen seconds.",
+		"I suppose that delays the inevitable by a couple of seconds.",
 		"Congratulations. You are slightly less dead.",
 		"Did you really think that would help?",
-		"Applying an inadequate adhesive to massive internal trauma. Very scientific.",
+		"Putting a tiny bandage over a massive wound. Brilliant.",
 		"You still look completely ridiculous.",
 		"Medical supplies wasted. Taking that out of your paycheck.",
 		"A tiny bit of health. Barely worth the effort.",
@@ -377,7 +377,7 @@ local DialogueLines = {
 		"I'd ask you to run faster, but I don't want you to trip and cry.",
 		"The way you walk around is just... really sad to watch.",
 		"I'd ask how you are, but I literally don't care at all.",
-		"Sorry about the mess. I've really let the place go since you killed me. By the way, thanks for that.",
+		"Sorry about the mess. I've really let the place go.",
 		"I might take up a hobby. Reanimating the dead, maybe.",
 		"I'm happy to put this all behind us and get back to work. We've got a lot to do."
 	},
@@ -1270,6 +1270,97 @@ local function updateProximityPrompts()
 	end
 end
 
+local function updateUI()
+	if shuttingDown then return end
+	local targetColor = active and COLOR_ACTIVE or COLOR_INACTIVE
+	local ti = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+	task.spawn(function()
+		if not minimized then TweenService:Create(statusText, fadeTweenInfo, {TextTransparency = 1}):Play() task.wait(0.15) end
+		statusText.Text = active and "<0>" or "<X>"
+		if not minimized and not shuttingDown then TweenService:Create(statusText, fadeTweenInfo, {TextTransparency = 0}):Play() end
+	end)
+
+	TweenService:Create(statusText, ti, {TextColor3 = targetColor}):Play()
+	TweenService:Create(outerStroke, ti, {Color = targetColor}):Play()
+	TweenService:Create(headerTag, ti, {TextColor3 = targetColor}):Play()
+	TweenService:Create(bottomHeader, ti, {TextColor3 = targetColor}):Play()
+	
+	TweenService:Create(statOuterStroke, ti, {Color = targetColor}):Play()
+	TweenService:Create(statInnerStroke, ti, {Color = targetColor, Transparency = active and 0.5 or 0.8}):Play()
+	TweenService:Create(statTitle, ti, {TextColor3 = targetColor}):Play()
+	TweenService:Create(statDivider, ti, {BackgroundColor3 = targetColor}):Play()
+	
+	TweenService:Create(radarOuterStroke, ti, {Color = targetColor}):Play()
+	for _, techEl in ipairs(techCornerElements) do TweenService:Create(techEl, ti, {BackgroundColor3 = targetColor}):Play() end
+	TweenService:Create(crossV, ti, {BackgroundColor3 = targetColor}):Play()
+	TweenService:Create(crossH, ti, {BackgroundColor3 = targetColor}):Play()
+	TweenService:Create(radarScanner, ti, {BackgroundColor3 = targetColor}):Play()
+	TweenService:Create(radarCenter, ti, {BackgroundColor3 = targetColor}):Play()
+	TweenService:Create(toggleContainer, ti, {ScrollBarImageColor3 = targetColor}):Play()
+	for _, rStroke in ipairs(radarRings) do TweenService:Create(rStroke, ti, {Color = targetColor}):Play() end
+	
+	for _, item in ipairs(radialLayers) do
+		if active then
+			TweenService:Create(item.instance, ti, {
+				BackgroundColor3 = item.color,
+				BackgroundTransparency = 0.88 + (0.09 * (1 - math.clamp(item.ratio, 0, 1)))
+			}):Play()
+		else
+			TweenService:Create(item.instance, ti, {
+				BackgroundTransparency = 1
+			}):Play()
+		end
+	end
+
+	for _, blip in pairs(cachedBlips) do
+		local stroke = blip:FindFirstChildOfClass("UIStroke")
+		local targetBg, targetStroke
+		
+		if active then
+			if blip.Name == "Twisted" then
+				targetBg = Color3.fromRGB(0, 0, 0)
+				targetStroke = COLOR_ACTIVE
+			elseif blip.Name == "Player" then
+				targetBg = Color3.fromRGB(255, 255, 255)
+				targetStroke = COLOR_ACTIVE
+			elseif blip.Name == "Machine" then
+				targetBg = COLOR_ACTIVE
+				targetStroke = Color3.fromRGB(0, 0, 0)
+			end
+		else
+			if blip.Name == "Twisted" then
+				targetBg = Color3.fromRGB(130, 130, 130)
+				targetStroke = Color3.fromRGB(255, 255, 255)
+			elseif blip.Name == "Player" then
+				targetBg = Color3.fromRGB(255, 255, 255)
+				targetStroke = Color3.fromRGB(0, 0, 0)
+			elseif blip.Name == "Machine" then
+				targetBg = Color3.fromRGB(0, 0, 0) 
+				targetStroke = Color3.fromRGB(255, 255, 255)
+			end
+		end
+
+		if targetBg then TweenService:Create(blip, ti, {BackgroundColor3 = targetBg}):Play() end
+		if stroke and targetStroke then TweenService:Create(stroke, ti, {Color = targetStroke}):Play() end
+	end
+	
+	for _, item in ipairs(toggleList) do 
+		if item.label then TweenService:Create(item.label, ti, {TextColor3 = targetColor}):Play() end
+		if item.badge then TweenService:Create(item.badge, ti, {TextColor3 = targetColor}):Play() end
+		if item.stroke then TweenService:Create(item.stroke, ti, {Color = targetColor}):Play() end
+		if item.arrow then TweenService:Create(item.arrow, ti, {TextColor3 = targetColor}):Play() end
+	end
+	if not minimized then
+		TweenService:Create(innerStroke, ti, {Color = targetColor, Transparency = active and 0.5 or 0.8}):Play()
+		if togglesOpen then 
+			TweenService:Create(extOuterStroke, ti, {Color = targetColor}):Play()
+			TweenService:Create(extSideL, ti, {BackgroundColor3 = targetColor, BackgroundTransparency = active and 0.5 or 0.8}):Play()
+			TweenService:Create(extSideR, ti, {BackgroundColor3 = targetColor, BackgroundTransparency = active and 0.5 or 0.8}):Play()
+		end
+	end
+end
+
 local function executeToggleLogic(id, state)
 	toggleStates[id] = state
 	if id == "Fullbright" then
@@ -1587,97 +1678,6 @@ createToggle("Hide_Radar", "Hide_Radar", 9)
 local fadeTweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
 local cachedBlips = {} 
 
-local function updateUI()
-	if shuttingDown then return end
-	local targetColor = active and COLOR_ACTIVE or COLOR_INACTIVE
-	local ti = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-
-	task.spawn(function()
-		if not minimized then TweenService:Create(statusText, fadeTweenInfo, {TextTransparency = 1}):Play() task.wait(0.15) end
-		statusText.Text = active and "<0>" or "<X>"
-		if not minimized and not shuttingDown then TweenService:Create(statusText, fadeTweenInfo, {TextTransparency = 0}):Play() end
-	end)
-
-	TweenService:Create(statusText, ti, {TextColor3 = targetColor}):Play()
-	TweenService:Create(outerStroke, ti, {Color = targetColor}):Play()
-	TweenService:Create(headerTag, ti, {TextColor3 = targetColor}):Play()
-	TweenService:Create(bottomHeader, ti, {TextColor3 = targetColor}):Play()
-	
-	TweenService:Create(statOuterStroke, ti, {Color = targetColor}):Play()
-	TweenService:Create(statInnerStroke, ti, {Color = targetColor, Transparency = active and 0.5 or 0.8}):Play()
-	TweenService:Create(statTitle, ti, {TextColor3 = targetColor}):Play()
-	TweenService:Create(statDivider, ti, {BackgroundColor3 = targetColor}):Play()
-	
-	TweenService:Create(radarOuterStroke, ti, {Color = targetColor}):Play()
-	for _, techEl in ipairs(techCornerElements) do TweenService:Create(techEl, ti, {BackgroundColor3 = targetColor}):Play() end
-	TweenService:Create(crossV, ti, {BackgroundColor3 = targetColor}):Play()
-	TweenService:Create(crossH, ti, {BackgroundColor3 = targetColor}):Play()
-	TweenService:Create(radarScanner, ti, {BackgroundColor3 = targetColor}):Play()
-	TweenService:Create(radarCenter, ti, {BackgroundColor3 = targetColor}):Play()
-	TweenService:Create(toggleContainer, ti, {ScrollBarImageColor3 = targetColor}):Play()
-	for _, rStroke in ipairs(radarRings) do TweenService:Create(rStroke, ti, {Color = targetColor}):Play() end
-	
-	for _, item in ipairs(radialLayers) do
-		if active then
-			TweenService:Create(item.instance, ti, {
-				BackgroundColor3 = item.color,
-				BackgroundTransparency = 0.88 + (0.09 * (1 - math.clamp(item.ratio, 0, 1)))
-			}):Play()
-		else
-			TweenService:Create(item.instance, ti, {
-				BackgroundTransparency = 1
-			}):Play()
-		end
-	end
-
-	for _, blip in pairs(cachedBlips) do
-		local stroke = blip:FindFirstChildOfClass("UIStroke")
-		local targetBg, targetStroke
-		
-		if active then
-			if blip.Name == "Twisted" then
-				targetBg = Color3.fromRGB(0, 0, 0)
-				targetStroke = COLOR_ACTIVE
-			elseif blip.Name == "Player" then
-				targetBg = Color3.fromRGB(255, 255, 255)
-				targetStroke = COLOR_ACTIVE
-			elseif blip.Name == "Machine" then
-				targetBg = COLOR_ACTIVE
-				targetStroke = Color3.fromRGB(0, 0, 0)
-			end
-		else
-			if blip.Name == "Twisted" then
-				targetBg = Color3.fromRGB(130, 130, 130)
-				targetStroke = Color3.fromRGB(255, 255, 255)
-			elseif blip.Name == "Player" then
-				targetBg = Color3.fromRGB(255, 255, 255)
-				targetStroke = Color3.fromRGB(0, 0, 0)
-			elseif blip.Name == "Machine" then
-				targetBg = Color3.fromRGB(0, 0, 0) 
-				targetStroke = Color3.fromRGB(255, 255, 255)
-			end
-		end
-
-		if targetBg then TweenService:Create(blip, ti, {BackgroundColor3 = targetBg}):Play() end
-		if stroke and targetStroke then TweenService:Create(stroke, ti, {Color = targetStroke}):Play() end
-	end
-	
-	for _, item in ipairs(toggleList) do 
-		if item.label then TweenService:Create(item.label, ti, {TextColor3 = targetColor}):Play() end
-		if item.badge then TweenService:Create(item.badge, ti, {TextColor3 = targetColor}):Play() end
-		if item.stroke then TweenService:Create(item.stroke, ti, {Color = targetColor}):Play() end
-		if item.arrow then TweenService:Create(item.arrow, ti, {TextColor3 = targetColor}):Play() end
-	end
-	if not minimized then
-		TweenService:Create(innerStroke, ti, {Color = targetColor, Transparency = active and 0.5 or 0.8}):Play()
-		if togglesOpen then 
-			TweenService:Create(extOuterStroke, ti, {Color = targetColor}):Play()
-			TweenService:Create(extSideL, ti, {BackgroundColor3 = targetColor, BackgroundTransparency = active and 0.5 or 0.8}):Play()
-			TweenService:Create(extSideR, ti, {BackgroundColor3 = targetColor, BackgroundTransparency = active and 0.5 or 0.8}):Play()
-		end
-	end
-end
-
 local function toggleExtension()
 	if minimized or shuttingDown then return end
 	togglesOpen = not togglesOpen
@@ -1745,13 +1745,6 @@ local function toggleMinimize()
 			end
 		end
 	end
-end
-
-local function toggle()
-	active = not active
-	if not active then resetMomentum() end
-	if active then soundOn:Play() else soundOff:Play() end
-	updateUI()
 end
 
 local function wipeSystem()
@@ -1915,7 +1908,7 @@ local function registerDescendant(desc)
 		if isTwisted(desc) then 
 			TrackedEntities.Twisteds[desc] = true 
 		elseif isMachine(desc) then
-			TrackedEntities.Machines[desc] = true
+			registerMachine(desc)
 		end
 	elseif desc:IsA("ProximityPrompt") then
 		TrackedEntities.Prompts[desc] = true
