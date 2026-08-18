@@ -190,8 +190,6 @@ local TrackedEntities = {
 	Prompts = {}
 }
 
-local completedMachines = {}
-
 local function isTwisted(model)
 	if not model or not model:IsA("Model") or Players:GetPlayerFromCharacter(model) then return false end
 	local lowerName = string.lower(model.Name)
@@ -1177,6 +1175,28 @@ local function scanAndApplyESP()
 	end
 end
 
+local function attachMachineListener(machine, prompt)
+	prompt:GetPropertyChangedSignal("Enabled"):Connect(function()
+		if toggleStates.Machine_ESP then
+			if not prompt.Enabled then
+				removeSingleESP(machine)
+			else
+				applyESP(machine, "Machine")
+			end
+		end
+	end)
+end
+
+local function registerMachine(desc)
+	if TrackedEntities.Machines[desc] then return end
+	TrackedEntities.Machines[desc] = true
+	local prompt = desc:FindFirstChildWhichIsA("ProximityPrompt", true)
+	if prompt then attachMachineListener(desc, prompt) end
+	desc.DescendantAdded:Connect(function(child)
+		if child:IsA("ProximityPrompt") then attachMachineListener(desc, child) end
+	end)
+end
+
 local function trackPrompt(prompt)
 	if promptConnections[prompt] then return end
 	if EnvironmentSnapshot.Prompts[prompt] == nil then
@@ -1767,7 +1787,7 @@ local function registerDescendant(desc)
 		if isTwisted(desc) then 
 			TrackedEntities.Twisteds[desc] = true 
 		elseif isMachine(desc) then
-			tEnts.Machines[desc] = true
+			TrackedEntities.Machines[desc] = true
 		end
 	elseif desc:IsA("ProximityPrompt") then
 		TrackedEntities.Prompts[desc] = true
@@ -1793,30 +1813,29 @@ local function registerDescendant(desc)
 		end
 		
 		local pM = d:FindFirstAncestorWhichIsA("Model")
-		if pM and isMa(pM) and not tEnts.Machines[pM] then
-			tEnts.Machines[pM] = true
+		if pM and isMa(pM) and not TrackedEntities.Machines[pM] then
+			TrackedEntities.Machines[pM] = true
 		end
 	end
 end
 
 table.insert(cons, workspace.DescendantAdded:Connect(function(d)
-	rDesc(d)
+	registerDescendant(d)
 	if cfg.Twisted_ESP and isTw(d) then task.wait(0.15) aESP(d, "Monster") end
-	if cfg.Machine_ESP and (tEnts.Machines[d] or isMa(d)) then task.wait(0.15) aESP(d, "Machine") end
+	if cfg.Machine_ESP and (TrackedEntities.Machines[d] or isMa(d)) then task.wait(0.15) aESP(d, "Machine") end
 end))
 
 table.insert(cons, workspace.DescendantRemoving:Connect(function(d)
 	if d:IsA("Model") then
-		tEnts.Twisteds[d] = nil
-		tEnts.Machines[d] = nil
-		cMachs[d] = nil
+		TrackedEntities.Twisteds[d] = nil
+		TrackedEntities.Machines[d] = nil
 	elseif d:IsA("ProximityPrompt") then
-		tEnts.Prompts[d] = nil
+		TrackedEntities.Prompts[d] = nil
 		env.P[d] = nil
 	end
-	if cBlps[d] then
-		cBlps[d]:Destroy()
-		cBlps[d] = nil
+	if cachedBlips[d] then
+		cachedBlips[d]:Destroy()
+		cachedBlips[d] = nil
 	end
 end))
 
@@ -1831,99 +1850,99 @@ uPrmpt()
 local lRTk = 0
 
 local function gBlip(t, bT)
-	if cBlps[t] then return cBlps[t] end
-	local b = Instance.new("Frame")
-	b.Name = bT
-	b.Size = UDim2.new(0, 5, 0, 5)
-	b.AnchorPoint = Vector2.new(0.5, 0.5) 
-	b.BorderSizePixel = 0
+	if cachedBlips[t] then return cachedBlips[t] end
+	local blip = Instance.new("Frame")
+	blip.Name = bT
+	blip.Size = UDim2.new(0, 5, 0, 5)
+	blip.AnchorPoint = Vector2.new(0.5, 0.5) 
+	blip.BorderSizePixel = 0
 	
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(1, 0)
-	c.Parent = b
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(1, 0)
+	corner.Parent = blip
 	
-	local s = Instance.new("UIStroke")
-	s.Thickness = 1
-	s.Parent = b
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 1
+	stroke.Parent = blip
 	
-	if act then
+	if active then
 		if bT == "Twisted" then
-			b.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
-			s.Color = cAct
+			blip.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
+			stroke.Color = cAct
 		elseif bT == "Player" then
-			b.BackgroundColor3 = Color3.fromRGB(255, 255, 255) 
-			s.Color = cAct
+			blip.BackgroundColor3 = Color3.fromRGB(255, 255, 255) 
+			stroke.Color = cAct
 		elseif bT == "Machine" then
-			b.BackgroundColor3 = cAct 
-			s.Color = Color3.fromRGB(0, 0, 0)
+			blip.BackgroundColor3 = cAct 
+			stroke.Color = Color3.fromRGB(0, 0, 0)
 		end
 	else
 		if bT == "Twisted" then
-			b.BackgroundColor3 = Color3.fromRGB(130, 130, 130) 
-			s.Color = Color3.fromRGB(255, 255, 255)
+			blip.BackgroundColor3 = Color3.fromRGB(130, 130, 130) 
+			stroke.Color = Color3.fromRGB(255, 255, 255)
 		elseif bT == "Player" then
-			b.BackgroundColor3 = Color3.fromRGB(255, 255, 255) 
-			s.Color = Color3.fromRGB(0, 0, 0)
+			blip.BackgroundColor3 = Color3.fromRGB(255, 255, 255) 
+			stroke.Color = Color3.fromRGB(0, 0, 0)
 		elseif bT == "Machine" then
-			b.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
-			s.Color = Color3.fromRGB(255, 255, 255)
+			blip.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
+			stroke.Color = Color3.fromRGB(255, 255, 255)
 		end
 	end
 
-	b.Parent = rBlps
-	cachedBlips[t] = b
-	return b
+	blip.Parent = radarBlips
+	cachedBlips[t] = blip
+	return blip
 end
 
-local function eRadTick()
-	if sDwn then return end 
-	if not plr.Character or not plr.Character:FindFirstChild("HumanoidRootPart") then return end
+local function executeRadarTick()
+	if shuttingDown then return end 
+	if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
 
-	local cm = workspace.CurrentCamera
-	if not cm then return end
+	local cam = workspace.CurrentCamera
+	if not cam then return end
 
-	local hrp = plr.Character.HumanoidRootPart
-	local lk = cm.CFrame.LookVector
-	local fl = Vector3.new(lk.X, 0, lk.Z)
-	if fl.Magnitude > 0.001 then
-		fl = fl.Unit
+	local hrp = player.Character.HumanoidRootPart
+	local look = cam.CFrame.LookVector
+	local flatLook = Vector3.new(look.X, 0, look.Z)
+	if flatLook.Magnitude > 0.001 then
+		flatLook = flatLook.Unit
 	else
-		fl = Vector3.new(0, 0, -1)
+		flatLook = Vector3.new(0, 0, -1)
 	end
 
-	local mCF = CFrame.lookAt(hrp.Position, hrp.Position + fl)
-	local mR, rd = 150, 59
-	local sT = {}
+	local myCFrame = CFrame.lookAt(hrp.Position, hrp.Position + flatLook)
+	local maxRange, radius = 150, 59
+	local seenTargets = {}
 
-	local function pTarObj(tO, bT)
-		if not tO or not tO.Parent then return end
-		local p = tO:IsA("Model") and (tO:FindFirstChild("HumanoidRootPart") or tO.PrimaryPart or tO:FindFirstChildWhichIsA("BasePart")) or (tO:IsA("BasePart") and tO or nil)
-		if not p then return end
+	local function processTarget(targetObj, blipType)
+		if not targetObj or not targetObj.Parent then return end
+		local part = targetObj:IsA("Model") and (targetObj:FindFirstChild("HumanoidRootPart") or targetObj.PrimaryPart or targetObj:FindFirstChildWhichIsA("BasePart")) or (targetObj:IsA("BasePart") and targetObj or nil)
+		if not part then return end
 
-		local rP = mCF:PointToObjectSpace(p.Position)
-		local d2 = Vector2.new(rP.X, rP.Z).Magnitude
+		local relativePos = myCFrame:PointToObjectSpace(part.Position)
+		local dist2D = Vector2.new(relativePos.X, relativePos.Z).Magnitude
 		
-		if d2 <= mR then
-			sT[tO] = true
-			local b = gBlip(tO, bT)
-			local rX = (rP.X / mR) * rd
-			local rY = (rP.Z / mR) * rd
+		if dist2D <= maxRange then
+			seenTargets[targetObj] = true
+			local blip = gBlip(targetObj, blipType)
+			local rX = (relativePos.X / maxRange) * radius
+			local rY = (relativePos.Z / maxRange) * radius
 			
-			b.Position = UDim2.new(0.5, rX, 0.5, rY)
+			blip.Position = UDim2.new(0.5, rX, 0.5, rY)
 
-			local bA = (math.deg(math.atan2(rY, rX)) + 360) % 360
-			local sA = sPiv.Rotation % 360
-			local aD = math.abs(bA - sA)
+			local blipAngle = (math.deg(math.atan2(rY, rX)) + 360) % 360
+			local scanAngle = scannerPivot.Rotation % 360
+			local angleDiff = math.abs(blipAngle - scanAngle)
 			
-			local str = b:FindFirstChildOfClass("UIStroke")
-			if aD < 14 or aD > 346 then
-				b.BackgroundTransparency = 0
+			local str = blip:FindFirstChildOfClass("UIStroke")
+			if angleDiff < 14 or angleDiff > 346 then
+				blip.BackgroundTransparency = 0
 				if str then
 					str.Thickness = 1.6
 					str.Transparency = 0
 				end
 			else
-				b.BackgroundTransparency = math.clamp(b.BackgroundTransparency + 0.0088, 0, 0.35)
+				blip.BackgroundTransparency = math.clamp(blip.BackgroundTransparency + 0.0088, 0, 0.35)
 				if str then
 					str.Thickness = math.clamp(str.Thickness - 0.012, 1.0, 1.6)
 					str.Transparency = math.clamp(str.Transparency + 0.0088, 0, 0.5)
@@ -1932,117 +1951,117 @@ local function eRadTick()
 		end
 	end
 
-	for t in pairs(tEnts.Twisteds) do
-		if isTw(t) then pTarObj(t, "Twisted") end
+	for t in pairs(TrackedEntities.Twisteds) do
+		if isTwisted(t) then processTarget(t, "Twisted") end
 	end
-	for m in pairs(tEnts.Machines) do
-		pTarObj(m, "Machine")
+	for m in pairs(TrackedEntities.Machines) do
+		processTarget(m, "Machine")
 	end
-	for _, p in ipairs(pls:GetPlayers()) do
-		if p ~= plr and p.Character then pTarObj(p.Character, "Player") end
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p ~= player and p.Character then processTarget(p.Character, "Player") end
 	end
 
-	for o, b in pairs(cBlps) do
-		if not sT[o] then
-			b:Destroy()
-			cBlps[o] = nil
+	for obj, blip in pairs(cachedBlips) do
+		if not seenTargets[obj] then
+			blip:Destroy()
+			cachedBlips[obj] = nil
 		end
 	end
 end
 
-table.insert(cons, rs.Stepped:Connect(function()
-	if sDwn then return end
-	if act then
-		aSlip(true)
+table.insert(connections, RunService.Stepped:Connect(function()
+	if shuttingDown then return end
+	if active then
+		applyAntiSlip(true)
 	end
 end))
 
-table.insert(cons, rs.RenderStepped:Connect(function()
-	if sDwn then
-		rWrp.Visible = false
+table.insert(connections, RunService.RenderStepped:Connect(function()
+	if shuttingDown then
+		radarWrapper.Visible = false
 		return
 	else
-		rWrp.Visible = not cfg.Hide_Radar
-		sPiv.Rotation = (tick() * 150) % 360
+		radarWrapper.Visible = not cfg.Hide_Radar
+		scannerPivot.Rotation = (tick() * 150) % 360
 	end
 
 	if tick() - lRTk >= 0.005 then
 		lRTk = tick()
-		eRadTick()
+		executeRadarTick()
 	end
 end))
 
-table.insert(cons, rs.Heartbeat:Connect(function()
-	if sDwn then return end
+table.insert(connections, RunService.Heartbeat:Connect(function()
+	if shuttingDown then return end
 
-	local tSD = tick() - lHTk
-	if act and not isC then
-		if tSD >= 900 and (tick() - lSLTk > 120) then
-			lSLTk = tick()
-			qDiag("Affec2")
-		elseif tSD >= 300 and tSD < 900 and (tick() - lLDTk > 90) then
-			lLDTk = tick()
-			qDiag("Affec1")
+	local timeSinceDamage = tick() - lastHitTick
+	if active and not isChatting then
+		if timeSinceDamage >= 900 and (tick() - lastSuperLoveTick > 120) then
+			lastSuperLoveTick = tick()
+			queueDialogue("Affec2")
+		elseif timeSinceDamage >= 300 and timeSinceDamage < 900 and (tick() - lastAffec1Tick > 90) then
+			lastAffec1Tick = tick()
+			queueDialogue("Affec1")
 		end
 	end
 
-	if tick() - lSU > 1 then
-		lSU = tick()
+	if tick() - lastStatUpdate > 1 then
+		lastStatUpdate = tick()
 		
 		if cfg.Player_ESP then
-			for _, p in ipairs(pls:GetPlayers()) do
-				if p ~= plr and p.Character then aESP(p.Character, "Player", p.DisplayName or p.Name) end
+			for _, p in ipairs(Players:GetPlayers()) do
+				if p ~= player and p.Character then applyESP(p.Character, "Player", p.DisplayName or p.Name) end
 			end
 		end
 		
 		if cfg.Stat_HUD then
-			local mC, iF = 0, {}
+			local mCount, itemsFound = 0, {}
 			
-			for m in pairs(tEnts.Twisteds) do
-				if isTw(m) then mC = mC + 1 end
+			for model in pairs(TrackedEntities.Twisteds) do
+				if isTwisted(model) then mCount = mCount + 1 end
 			end
 			
-			for p in pairs(tEnts.Prompts) do
-				if p.Enabled and p.ActionText ~= "Ichor" and p.ActionText ~= "" then
-					if sVals[p.ActionText] then 
-						iF[p.ActionText] = (iF[p.ActionText] or 0) + 1 
+			for prompt in pairs(TrackedEntities.Prompts) do
+				if prompt.Enabled and prompt.ActionText ~= "Ichor" and prompt.ActionText ~= "" then
+					if StatHudValuables[prompt.ActionText] then 
+						itemsFound[prompt.ActionText] = (itemsFound[prompt.ActionText] or 0) + 1 
 					end
 				end
 			end
 			
-			local lns = {string.format("> Twisteds: %02d", mC), "", "> Valuable_Items:"}
-			local hI = false
-			local iC = 0
-			for n, c in pairs(iF) do 
-				lns[#lns+1] = string.format("  • %s x%d", n, c) 
-				hI = true 
-				iC = iC + 1
+			local lines = {string.format("> Twisteds: %02d", mCount), "", "> Valuable_Items:"}
+			local hasItems = false
+			local itemCount = 0
+			for name, count in pairs(itemsFound) do 
+				lines[#lines+1] = string.format("  • %s x%d", name, count) 
+				hasItems = true 
+				itemCount = itemCount + 1
 			end
-			if not hI then 
-				lns[#lns+1] = "  • None" 
-				iC = 1
+			if not hasItems then 
+				lines[#lines+1] = "  • None" 
+				itemCount = 1
 			end
-			shBod.Text = table.concat(lns, "\n")
+			statBody.Text = table.concat(lines, "\n")
 			
-			local tH = 52 + (iC * 13)
-			if shFrm.Size.Y.Offset ~= tH then
-				tws:Create(shFrm, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 160, 0, tH)}):Play()
+			local targetHeight = 52 + (itemCount * 13)
+			if statHudFrame.Size.Y.Offset ~= targetHeight then
+				TweenService:Create(statHudFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 160, 0, targetHeight)}):Play()
 			end
 		end
 	end
 
 	if cfg.Fullbright then
-		lgt.Ambient = Color3.fromRGB(110, 110, 115)
-		lgt.OutdoorAmbient = Color3.fromRGB(110, 110, 115)
-		lgt.GlobalShadows = false
-		lgt.ExposureCompensation = env.L.ExposureCompensation + 0.8
+		Lighting.Ambient = Color3.fromRGB(110, 110, 115)
+		Lighting.OutdoorAmbient = Color3.fromRGB(110, 110, 115)
+		Lighting.GlobalShadows = false
+		Lighting.ExposureCompensation = EnvironmentSnapshot.Lighting.ExposureCompensation + 0.8
 	end
 
 	if cfg.Auto_Escape then
-		local sU = pgui:FindFirstChild("TwistedSquirmEscapeUI")
-		if sU and sU.Enabled and (tick() - lET > 0.05) then
-			lET = tick()
-			pcall(function() vim:SendKeyEvent(true, Enum.KeyCode.Space, false, game) task.wait(0.01) vim:SendKeyEvent(false, Enum.KeyCode.Space, false, game) end)
+		local squirmUI = pgui:FindFirstChild("TwistedSquirmEscapeUI")
+		if squirmUI and squirmUI.Enabled and (tick() - lastEscapeTap > 0.05) then
+			lastEscapeTap = tick()
+			pcall(function() VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game) task.wait(0.01) VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game) end)
 		end
 	end
 end))
