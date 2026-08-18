@@ -201,17 +201,8 @@ local TrackedEntities = {
 
 local function isTwisted(model)
 	if not model or not model:IsA("Model") or Players:GetPlayerFromCharacter(model) then return false end
-	if CollectionService:HasTag(model, "Twisted") or CollectionService:HasTag(model, "Monster") then return true end
-	
 	local lowerName = string.lower(model.Name)
-	if string.find(lowerName, "twisted") or string.find(lowerName, "monster") then return true end
-	
-	for filterKey in pairs(monsterFilters) do
-		if string.find(lowerName, filterKey) then
-			return true
-		end
-	end
-	return false
+	return string.find(lowerName, "monster") ~= nil
 end
 
 local function isMachine(model)
