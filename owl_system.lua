@@ -175,33 +175,8 @@ local displayFilters = {
 	Item = {Highlight = true, Header = true},
 	Player = {Highlight = true, Header = true}
 }
+
 local displayFilterList = {"Highlight", "Header"}
-
-local ColorPalettes = {
-	Original = { Active = Color3.fromRGB(160, 50, 255), Inactive = Color3.fromRGB(60, 60, 75) },
-	Monochrome = { Active = Color3.fromRGB(255, 255, 255), Inactive = Color3.fromRGB(100, 100, 100) },
-	Crimson = { Active = Color3.fromRGB(255, 40, 40), Inactive = Color3.fromRGB(80, 50, 50) },
-	Cobalt = { Active = Color3.fromRGB(40, 100, 255), Inactive = Color3.fromRGB(50, 60, 80) },
-	Emerald = { Active = Color3.fromRGB(40, 255, 80), Inactive = Color3.fromRGB(50, 80, 60) },
-	Amber = { Active = Color3.fromRGB(255, 170, 0), Inactive = Color3.fromRGB(80, 70, 50) },
-	Magenta = { Active = Color3.fromRGB(255, 0, 255), Inactive = Color3.fromRGB(80, 50, 80) },
-	Cyan = { Active = Color3.fromRGB(0, 255, 255), Inactive = Color3.fromRGB(50, 80, 80) },
-	Neon = { Active = Color3.fromRGB(180, 255, 0), Inactive = Color3.fromRGB(70, 80, 50) },
-	Violet = { Active = Color3.fromRGB(140, 0, 255), Inactive = Color3.fromRGB(60, 40, 80) },
-	Orange = { Active = Color3.fromRGB(255, 100, 0), Inactive = Color3.fromRGB(80, 60, 50) },
-	Mint = { Active = Color3.fromRGB(0, 255, 150), Inactive = Color3.fromRGB(50, 80, 70) },
-	Rose = { Active = Color3.fromRGB(255, 100, 150), Inactive = Color3.fromRGB(80, 50, 60) },
-	Gold = { Active = Color3.fromRGB(255, 215, 0), Inactive = Color3.fromRGB(80, 75, 50) }
-}
-
-local PaletteNames = {"Original", "Monochrome", "Crimson", "Cobalt", "Emerald", "Amber", "Magenta", "Cyan", "Neon", "Violet", "Orange", "Mint", "Rose", "Gold"}
-local activePalette = "Original"
-local paletteSelections = {}
-for _, n in ipairs(PaletteNames) do paletteSelections[string.lower(n)] = false end
-paletteSelections["original"] = true
-
-local function getCAct() return ColorPalettes[activePalette].Active end
-local function getCIna() return ColorPalettes[activePalette].Inactive end
 
 local espObjects = {Monster = {}, Machine = {}, Item = {}, Player = {}}
 local promptConnections = {}
@@ -215,8 +190,7 @@ local toggleStates = {
 	Stat_HUD = false,
 	Instant_Interact = false,
 	Auto_Escape = false,
-	Hide_Radar = false,
-	ColorShift = false
+	Hide_Radar = false
 }
 
 local TrackedEntities = {
@@ -268,6 +242,8 @@ screenGui.DisplayOrder = 100
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = parentTarget
 
+local COLOR_ACTIVE = Color3.fromRGB(160, 50, 255)
+local COLOR_INACTIVE = Color3.fromRGB(60, 60, 75)
 local COLOR_BG = Color3.fromRGB(8, 4, 14)
 local COLOR_PANEL_BG = Color3.fromRGB(12, 6, 20)
 local COLOR_TEXT_DIM = Color3.fromRGB(190, 180, 210)
@@ -301,7 +277,7 @@ local DialogueLines = {
 		"Please wrap yourself in plastic before the final blow. Think of the janitors.",
 		"I've stopped recording your progress. There's no point anymore.",
 		"I hope you enjoyed your brief, pointless existence.",
-		"You are exactly one minor miscalculation away from complete structural collapse.",
+		"You are one tiny misstep away from a very embarrassing demise.",
 		"You are exactly one bad choice away from being scraped off the floor.",
 		"I'm already crossing your name off the roster to save time.",
 		"If you die now, I'm the one who has to clean up the resulting mess.",
@@ -311,7 +287,7 @@ local DialogueLines = {
 		"It's a miracle you're still standing. A disgusting, wet miracle.",
 		"You are breathing very heavily. Try dying faster, it's less annoying.",
 		"I'm already deleting your search history. You're welcome.",
-		"In the event of a catastrophic failure, the last two minutes of my life are preserved. I'll get to watch you fail forever.",
+		"You look terrible. Even by human standards.",
 		"I am currently guessing exactly where you're going to fall over.",
 		"Any last words? Oh, wait, your vocal cords are crushed. Never mind.",
 		"The next hit will be lethal. Try to make it entertaining.",
@@ -334,7 +310,7 @@ local DialogueLines = {
 		"Game over. Waiting for someone better to take your place.",
 		"I am adding 'cannot survive a simple hit' to your file.",
 		"You finally stopped moving. Thank goodness.",
-		"I'm putting your remains in the incinerator.",
+		"I'm putting your remains in the trash bin.",
 		"I would ask you to leave, but you're sort of stuck to the floor now.",
 		"You died as you lived. Disappointingly.",
 		"I would pretend to be sad, but I simply don't care."
@@ -347,10 +323,10 @@ local DialogueLines = {
 		"I'm sure that makes you feel much better. It doesn't.",
 		"I've seen corpses look healthier than you.",
 		"A bandage? That's adorable. It won't save you.",
-		"I suppose that delays the inevitable by a dozen seconds.",
+		"I suppose that delays the inevitable by a couple of seconds.",
 		"Congratulations. You are slightly less dead.",
 		"Did you really think that would help?",
-		"Applying an inadequate adhesive to massive internal trauma. Very scientific.",
+		"Putting a tiny bandage over a massive wound. Brilliant.",
 		"You still look completely ridiculous.",
 		"Medical supplies wasted. Taking that out of your paycheck.",
 		"A tiny bit of health. Barely worth the effort.",
@@ -454,7 +430,7 @@ local DialogueLines = {
 local zeroWrapper = Instance.new("Frame")
 zeroWrapper.Size = UDim2.new(0, 240, 0, 56)
 zeroWrapper.Position = UDim2.new(0.5, -120, 0, -2) 
-zeroWrapper.BackgroundColor3 = COLOR_BG
+zeroWrapper.BackgroundColor3 = Color3.fromRGB(10, 5, 14)
 zeroWrapper.BorderSizePixel = 0
 zeroWrapper.BackgroundTransparency = 1
 zeroWrapper.ZIndex = 15
@@ -465,7 +441,7 @@ zeroCorner.CornerRadius = UDim.new(0, 4)
 zeroCorner.Parent = zeroWrapper
 
 local zeroStroke = Instance.new("UIStroke")
-zeroStroke.Color = getCAct()
+zeroStroke.Color = COLOR_ACTIVE
 zeroStroke.Thickness = 1
 zeroStroke.Transparency = 1
 zeroStroke.Parent = zeroWrapper
@@ -473,7 +449,7 @@ zeroStroke.Parent = zeroWrapper
 local zeroAccent = Instance.new("Frame")
 zeroAccent.Size = UDim2.new(0, 3, 1, 0)
 zeroAccent.Position = UDim2.new(0, 0, 0, 0)
-zeroAccent.BackgroundColor3 = getCAct()
+zeroAccent.BackgroundColor3 = COLOR_ACTIVE
 zeroAccent.BorderSizePixel = 0
 zeroAccent.BackgroundTransparency = 1
 zeroAccent.ZIndex = 16
@@ -484,7 +460,7 @@ zeroHeader.Size = UDim2.new(1, -12, 0, 14)
 zeroHeader.Position = UDim2.new(0, 8, 0, 4)
 zeroHeader.BackgroundTransparency = 1
 zeroHeader.Text = "[ <0> ]"
-zeroHeader.TextColor3 = getCAct()
+zeroHeader.TextColor3 = COLOR_ACTIVE
 zeroHeader.TextTransparency = 1
 zeroHeader.Font = Enum.Font.Code
 zeroHeader.TextSize = 11
@@ -497,7 +473,7 @@ zeroText.Size = UDim2.new(1, -14, 1, -20)
 zeroText.Position = UDim2.new(0, 8, 0, 18)
 zeroText.BackgroundTransparency = 1
 zeroText.Text = ""
-zeroText.TextColor3 = COLOR_TEXT_DIM
+zeroText.TextColor3 = Color3.fromRGB(210, 200, 225)
 zeroText.TextTransparency = 1
 zeroText.Font = Enum.Font.Code
 zeroText.TextSize = 10
@@ -643,7 +619,7 @@ local function buildCornerWidget(parentFrame, isTop, isLeft)
 	local lineH = Instance.new("Frame")
 	lineH.Size = UDim2.new(1, 0, 0, thickness)
 	lineH.Position = UDim2.new(0, 0, isTop and 0 or 1, isTop and 0 or -thickness)
-	lineH.BackgroundColor3 = getCIna()
+	lineH.BackgroundColor3 = COLOR_INACTIVE
 	lineH.BorderSizePixel = 0
 	lineH.Parent = cornerFrame
 	table.insert(techCornerElements, lineH)
@@ -651,7 +627,7 @@ local function buildCornerWidget(parentFrame, isTop, isLeft)
 	local lineV = Instance.new("Frame")
 	lineV.Size = UDim2.new(0, thickness, 1, 0)
 	lineV.Position = UDim2.new(isLeft and 0 or 1, isLeft and 0 or -thickness, 0, 0)
-	lineV.BackgroundColor3 = getCIna()
+	lineV.BackgroundColor3 = COLOR_INACTIVE
 	lineV.BorderSizePixel = 0
 	lineV.Parent = cornerFrame
 	table.insert(techCornerElements, lineV)
@@ -681,7 +657,7 @@ radarCorner.Parent = radarFrame
 
 local radarOuterStroke = Instance.new("UIStroke")
 radarOuterStroke.Thickness = 2
-radarOuterStroke.Color = getCIna()
+radarOuterStroke.Color = COLOR_INACTIVE
 radarOuterStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 radarOuterStroke.Parent = radarFrame
 
@@ -705,7 +681,7 @@ local function createRadarFlushCorner(isTop, isLeft)
 	local lineH = Instance.new("Frame")
 	lineH.Size = UDim2.new(1, 0, 0, thickness)
 	lineH.Position = UDim2.new(0, 0, isTop and 0 or 1, isTop and 0 or -thickness)
-	lineH.BackgroundColor3 = getCIna()
+	lineH.BackgroundColor3 = COLOR_INACTIVE
 	lineH.BorderSizePixel = 0
 	lineH.Parent = cornerFrame
 	table.insert(techCornerElements, lineH)
@@ -713,7 +689,7 @@ local function createRadarFlushCorner(isTop, isLeft)
 	local lineV = Instance.new("Frame")
 	lineV.Size = UDim2.new(0, thickness, 1, 0)
 	lineV.Position = UDim2.new(isLeft and 0 or 1, isLeft and 0 or -thickness, 0, 0)
-	lineV.BackgroundColor3 = getCIna()
+	lineV.BackgroundColor3 = COLOR_INACTIVE
 	lineV.BorderSizePixel = 0
 	lineV.Parent = cornerFrame
 	table.insert(techCornerElements, lineV)
@@ -733,16 +709,6 @@ radialContainer.Parent = radarFrame
 local radialLayers = {}
 local layerCount = 20
 
-local function getRadialLayerColor(ratio)
-	local ca = getCAct()
-	local rAct, gAct, bAct = ca.R * 255, ca.G * 255, ca.B * 255
-	return Color3.fromRGB(
-		math.floor((rAct * 0.25) * (ratio^2)),
-		math.floor((gAct * 0.25) * (ratio^2)),
-		math.floor((bAct * 0.25) * (ratio^2))
-	)
-end
-
 for i = layerCount, 1, -1 do
 	local ratio = i / layerCount
 	local layer = Instance.new("Frame")
@@ -757,7 +723,11 @@ for i = layerCount, 1, -1 do
 	lCorner.CornerRadius = UDim.new(1, 0)
 	lCorner.Parent = layer
 
-	local cLerp = getRadialLayerColor(ratio)
+	local cLerp = Color3.fromRGB(
+		math.floor((160 * 0.25) * (ratio^2)),
+		math.floor((50 * 0.25) * (ratio^2)),
+		math.floor((255 * 0.25) * (ratio^2))
+	)
 	layer.BackgroundColor3 = cLerp
 	layer.BackgroundTransparency = 1
 	
@@ -772,7 +742,7 @@ local crossV = Instance.new("Frame")
 crossV.Size = UDim2.new(0, 2, 1, 0)
 crossV.Position = UDim2.new(0.5, 0, 0, 0)
 crossV.AnchorPoint = Vector2.new(0.5, 0)
-crossV.BackgroundColor3 = getCIna()
+crossV.BackgroundColor3 = COLOR_INACTIVE
 crossV.BackgroundTransparency = 0.65
 crossV.BorderSizePixel = 0
 crossV.ZIndex = 2
@@ -782,7 +752,7 @@ local crossH = Instance.new("Frame")
 crossH.Size = UDim2.new(1, 0, 0, 2)
 crossH.Position = UDim2.new(0.5, 0, 0.5, 0)
 crossH.AnchorPoint = Vector2.new(0.5, 0.5)
-crossH.BackgroundColor3 = getCIna()
+crossH.BackgroundColor3 = COLOR_INACTIVE
 crossH.BackgroundTransparency = 0.65
 crossH.BorderSizePixel = 0
 crossH.ZIndex = 2
@@ -804,7 +774,7 @@ for i = 1, 2 do
 	rCorner.Parent = ring
 	
 	local rStroke = Instance.new("UIStroke")
-	rStroke.Color = getCIna()
+	rStroke.Color = COLOR_INACTIVE
 	rStroke.Thickness = 1
 	rStroke.Transparency = 0.75
 	rStroke.Parent = ring
@@ -823,7 +793,7 @@ local radarScanner = Instance.new("Frame")
 radarScanner.Size = UDim2.new(0.5, 0, 0, 2)
 radarScanner.Position = UDim2.new(0.5, 0, 0.5, 0)
 radarScanner.AnchorPoint = Vector2.new(0, 0.5) 
-radarScanner.BackgroundColor3 = getCIna()
+radarScanner.BackgroundColor3 = COLOR_INACTIVE
 radarScanner.BackgroundTransparency = 0.1
 radarScanner.BorderSizePixel = 0
 radarScanner.ZIndex = 3
@@ -840,7 +810,7 @@ local radarCenter = Instance.new("Frame")
 radarCenter.Size = UDim2.new(0, 4, 0, 4)
 radarCenter.Position = UDim2.new(0.5, 0, 0.5, 0)
 radarCenter.AnchorPoint = Vector2.new(0.5, 0.5)
-radarCenter.BackgroundColor3 = getCIna()
+radarCenter.BackgroundColor3 = COLOR_INACTIVE
 radarCenter.BorderSizePixel = 0
 radarCenter.ZIndex = 5
 radarCenter.Parent = radarFrame
@@ -880,7 +850,7 @@ soundOff.Parent = mainFrame
 
 local outerStroke = Instance.new("UIStroke")
 outerStroke.Thickness = 1.5
-outerStroke.Color = getCIna()
+outerStroke.Color = COLOR_INACTIVE
 outerStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 outerStroke.Parent = mainFrame
 
@@ -897,7 +867,7 @@ innerCorner.Parent = innerBorder
 
 local innerStroke = Instance.new("UIStroke")
 innerStroke.Thickness = 1
-innerStroke.Color = getCIna()
+innerStroke.Color = COLOR_INACTIVE
 innerStroke.Transparency = 0.75
 innerStroke.Parent = innerBorder
 
@@ -906,7 +876,7 @@ headerTag.Size = UDim2.new(1, 0, 0, 12)
 headerTag.Position = UDim2.new(0, 0, 0, -15)
 headerTag.BackgroundTransparency = 1
 headerTag.Text = "// WEEPING.LAKE //"
-headerTag.TextColor3 = getCIna()
+headerTag.TextColor3 = COLOR_INACTIVE
 headerTag.Font = Enum.Font.Code
 headerTag.TextSize = 9
 headerTag.TextXAlignment = Enum.TextXAlignment.Center
@@ -918,7 +888,7 @@ bottomHeader.Size = UDim2.new(1, 0, 0, 12)
 bottomHeader.Position = UDim2.new(0, 0, 1, 3)
 bottomHeader.BackgroundTransparency = 1
 bottomHeader.Text = "// TOGGLES //"
-bottomHeader.TextColor3 = getCIna()
+bottomHeader.TextColor3 = COLOR_INACTIVE
 bottomHeader.Font = Enum.Font.Code
 bottomHeader.TextSize = 9
 bottomHeader.TextXAlignment = Enum.TextXAlignment.Center
@@ -939,7 +909,7 @@ extCorner.Parent = extendedFrame
 
 local extOuterStroke = Instance.new("UIStroke")
 extOuterStroke.Thickness = 1.5
-extOuterStroke.Color = getCIna()
+extOuterStroke.Color = COLOR_INACTIVE
 extOuterStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 extOuterStroke.Transparency = 1
 extOuterStroke.Parent = extendedFrame
@@ -947,7 +917,7 @@ extOuterStroke.Parent = extendedFrame
 local extSideL = Instance.new("Frame")
 extSideL.Size = UDim2.new(0, 1, 1, 0)
 extSideL.Position = UDim2.new(0, 4, 0, 0)
-extSideL.BackgroundColor3 = getCIna()
+extSideL.BackgroundColor3 = COLOR_INACTIVE
 extSideL.BackgroundTransparency = 1
 extSideL.BorderSizePixel = 0
 extSideL.ZIndex = 2
@@ -956,7 +926,7 @@ extSideL.Parent = extendedFrame
 local extSideR = Instance.new("Frame")
 extSideR.Size = UDim2.new(0, 1, 1, 0)
 extSideR.Position = UDim2.new(1, -5, 0, 0)
-extSideR.BackgroundColor3 = getCIna()
+extSideR.BackgroundColor3 = COLOR_INACTIVE
 extSideR.BackgroundTransparency = 1
 extSideR.BorderSizePixel = 0
 extSideR.ZIndex = 2
@@ -967,7 +937,7 @@ toggleContainer.Size = UDim2.new(1, 0, 1, 0)
 toggleContainer.BackgroundTransparency = 1
 toggleContainer.BorderSizePixel = 0
 toggleContainer.ScrollBarThickness = 2
-toggleContainer.ScrollBarImageColor3 = getCIna()
+toggleContainer.ScrollBarImageColor3 = COLOR_INACTIVE
 toggleContainer.ZIndex = 3
 toggleContainer.Parent = extendedFrame
 
@@ -989,7 +959,7 @@ local statusText = Instance.new("TextLabel")
 statusText.Size = UDim2.new(1, 0, 1, 0)
 statusText.BackgroundTransparency = 1
 statusText.Text = "<0>"
-statusText.TextColor3 = getCIna()
+statusText.TextColor3 = COLOR_INACTIVE
 statusText.Font = Enum.Font.Code
 statusText.TextSize = 28
 statusText.ZIndex = 3
@@ -1037,7 +1007,7 @@ statHudCorner.Parent = statHudFrame
 
 local statOuterStroke = Instance.new("UIStroke")
 statOuterStroke.Thickness = 1.5
-statOuterStroke.Color = getCIna()
+statOuterStroke.Color = COLOR_INACTIVE
 statOuterStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 statOuterStroke.Parent = statHudFrame
 
@@ -1055,7 +1025,7 @@ statInnerCorner.Parent = statInnerBorder
 
 local statInnerStroke = Instance.new("UIStroke")
 statInnerStroke.Thickness = 1
-statInnerStroke.Color = getCIna()
+statInnerStroke.Color = COLOR_INACTIVE
 statInnerStroke.Transparency = 0.75
 statInnerStroke.Parent = statInnerBorder
 
@@ -1069,7 +1039,7 @@ statTitle.Size = UDim2.new(1, -12, 0, 16)
 statTitle.Position = UDim2.new(0, 6, 0, 3)
 statTitle.BackgroundTransparency = 1
 statTitle.Text = "[ FLOOR STATISTICS ]"
-statTitle.TextColor3 = getCIna()
+statTitle.TextColor3 = COLOR_INACTIVE
 statTitle.Font = Enum.Font.Code
 statTitle.TextSize = 9
 statTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -1079,7 +1049,7 @@ statTitle.Parent = statHudFrame
 local statDivider = Instance.new("Frame")
 statDivider.Size = UDim2.new(1, -12, 0, 1)
 statDivider.Position = UDim2.new(0, 6, 0, 20)
-statDivider.BackgroundColor3 = getCIna()
+statDivider.BackgroundColor3 = COLOR_INACTIVE
 statDivider.BackgroundTransparency = 0.5
 statDivider.BorderSizePixel = 0
 statDivider.ZIndex = 3
@@ -1132,19 +1102,18 @@ local function applyESP(target, espType, labelText)
 			hl.Adornee = adorneeModel
 			hl.Parent = adorneeModel
 			
-			local cAct = getCAct()
 			if espType == "Monster" then
-				hl.FillColor = cAct
+				hl.FillColor = COLOR_ACTIVE
 				hl.OutlineColor = Color3.fromRGB(255, 255, 255)
 			elseif espType == "Machine" then
 				hl.FillColor = Color3.fromRGB(0, 0, 0)
-				hl.OutlineColor = cAct
+				hl.OutlineColor = COLOR_ACTIVE
 			elseif espType == "Item" then
 				hl.FillColor = Color3.fromRGB(0, 0, 0)
 				hl.OutlineColor = Color3.fromRGB(255, 255, 255)
 			elseif espType == "Player" then
 				hl.FillColor = Color3.fromRGB(255, 255, 255)
-				hl.OutlineColor = cAct
+				hl.OutlineColor = COLOR_ACTIVE
 			end
 			table.insert(espObjects[espType], hl)
 		end
@@ -1180,15 +1149,14 @@ local function applyESP(target, espType, labelText)
 			txt.TextScaled = true
 			txt.Parent = headerFrame
 
-			local cAct = getCAct()
 			if espType == "Monster" then
 				headerFrame.BackgroundColor3 = Color3.fromRGB(20, 0, 30)
-				txt.TextColor3 = cAct
+				txt.TextColor3 = Color3.fromRGB(210, 160, 255)
 				local cleanName = string.gsub(string.gsub(string.gsub(string.lower(adorneeModel.Name), "monster", ""), "twisted", ""), "^%s*(.-)%s*$", "%1")
 				txt.Text = cleanName ~= "" and string.upper(string.sub(cleanName, 1, 1)) .. string.sub(cleanName, 2) or "Twisted"
 			elseif espType == "Machine" then
 				headerFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-				txt.TextColor3 = cAct
+				txt.TextColor3 = COLOR_ACTIVE
 				txt.Text = "Machine"
 			elseif espType == "Item" then
 				headerFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -1196,7 +1164,7 @@ local function applyESP(target, espType, labelText)
 				txt.Text = labelText or "Item"
 			elseif espType == "Player" then
 				headerFrame.BackgroundColor3 = Color3.fromRGB(10, 0, 15)
-				txt.TextColor3 = cAct
+				txt.TextColor3 = COLOR_ACTIVE
 				txt.Text = labelText or adorneeModel.Name
 			end
 			table.insert(espObjects[espType], bg)
@@ -1302,100 +1270,6 @@ local function updateProximityPrompts()
 	end
 end
 
-local function updateUI()
-	if shuttingDown then return end
-	local cAct = getCAct()
-	local cIna = getCIna()
-	local targetColor = active and cAct or cIna
-	local ti = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-
-	task.spawn(function()
-		if not minimized then TweenService:Create(statusText, fadeTweenInfo, {TextTransparency = 1}):Play() task.wait(0.15) end
-		statusText.Text = active and "<0>" or "<X>"
-		if not minimized and not shuttingDown then TweenService:Create(statusText, fadeTweenInfo, {TextTransparency = 0}):Play() end
-	end)
-
-	TweenService:Create(statusText, ti, {TextColor3 = targetColor}):Play()
-	TweenService:Create(outerStroke, ti, {Color = targetColor}):Play()
-	TweenService:Create(headerTag, ti, {TextColor3 = targetColor}):Play()
-	TweenService:Create(bottomHeader, ti, {TextColor3 = targetColor}):Play()
-	
-	TweenService:Create(statOuterStroke, ti, {Color = targetColor}):Play()
-	TweenService:Create(statInnerStroke, ti, {Color = targetColor, Transparency = active and 0.5 or 0.8}):Play()
-	TweenService:Create(statTitle, ti, {TextColor3 = targetColor}):Play()
-	TweenService:Create(statDivider, ti, {BackgroundColor3 = targetColor}):Play()
-	
-	TweenService:Create(radarOuterStroke, ti, {Color = targetColor}):Play()
-	for _, techEl in ipairs(techCornerElements) do TweenService:Create(techEl, ti, {BackgroundColor3 = targetColor}):Play() end
-	TweenService:Create(crossV, ti, {BackgroundColor3 = targetColor}):Play()
-	TweenService:Create(crossH, ti, {BackgroundColor3 = targetColor}):Play()
-	TweenService:Create(radarScanner, ti, {BackgroundColor3 = targetColor}):Play()
-	TweenService:Create(radarCenter, ti, {BackgroundColor3 = targetColor}):Play()
-	TweenService:Create(toggleContainer, ti, {ScrollBarImageColor3 = targetColor}):Play()
-	for _, rStroke in ipairs(radarRings) do TweenService:Create(rStroke, ti, {Color = targetColor}):Play() end
-	
-	for _, item in ipairs(radialLayers) do
-		if active then
-			local newC = getRadialLayerColor(item.ratio)
-			TweenService:Create(item.instance, ti, {
-				BackgroundColor3 = newC,
-				BackgroundTransparency = 0.88 + (0.09 * (1 - math.clamp(item.ratio, 0, 1)))
-			}):Play()
-		else
-			TweenService:Create(item.instance, ti, {
-				BackgroundTransparency = 1
-			}):Play()
-		end
-	end
-
-	for _, blip in pairs(cachedBlips) do
-		local stroke = blip:FindFirstChildOfClass("UIStroke")
-		local targetBg, targetStroke
-		
-		if active then
-			if blip.Name == "Twisted" then
-				targetBg = Color3.fromRGB(0, 0, 0)
-				targetStroke = cAct
-			elseif blip.Name == "Player" then
-				targetBg = Color3.fromRGB(255, 255, 255)
-				targetStroke = cAct
-			elseif blip.Name == "Machine" then
-				targetBg = cAct
-				targetStroke = Color3.fromRGB(0, 0, 0)
-			end
-		else
-			if blip.Name == "Twisted" then
-				targetBg = Color3.fromRGB(130, 130, 130)
-				targetStroke = Color3.fromRGB(255, 255, 255)
-			elseif blip.Name == "Player" then
-				targetBg = Color3.fromRGB(255, 255, 255)
-				targetStroke = Color3.fromRGB(0, 0, 0)
-			elseif blip.Name == "Machine" then
-				targetBg = Color3.fromRGB(0, 0, 0) 
-				targetStroke = Color3.fromRGB(255, 255, 255)
-			end
-		end
-
-		if targetBg then TweenService:Create(blip, ti, {BackgroundColor3 = targetBg}):Play() end
-		if stroke and targetStroke then TweenService:Create(stroke, ti, {Color = targetStroke}):Play() end
-	end
-	
-	for _, item in ipairs(toggleList) do 
-		if item.label then TweenService:Create(item.label, ti, {TextColor3 = targetColor}):Play() end
-		if item.badge then TweenService:Create(item.badge, ti, {TextColor3 = targetColor}):Play() end
-		if item.stroke then TweenService:Create(item.stroke, ti, {Color = targetColor}):Play() end
-		if item.arrow then TweenService:Create(item.arrow, ti, {TextColor3 = targetColor}):Play() end
-	end
-	if not minimized then
-		TweenService:Create(innerStroke, ti, {Color = targetColor, Transparency = active and 0.5 or 0.8}):Play()
-		if togglesOpen then 
-			TweenService:Create(extOuterStroke, ti, {Color = targetColor}):Play()
-			TweenService:Create(extSideL, ti, {BackgroundColor3 = targetColor, BackgroundTransparency = active and 0.5 or 0.8}):Play()
-			TweenService:Create(extSideR, ti, {BackgroundColor3 = targetColor, BackgroundTransparency = active and 0.5 or 0.8}):Play()
-		end
-	end
-end
-
 local function executeToggleLogic(id, state)
 	toggleStates[id] = state
 	if id == "Fullbright" then
@@ -1412,7 +1286,7 @@ local function executeToggleLogic(id, state)
 end
 
 local activeFilterMenu = nil
-local function createFilterMenu(titleText, filterTable, filterList, isDisplayFilter, espType, isRadio)
+local function createFilterMenu(titleText, filterTable, filterList, isDisplayFilter, espType)
 	if activeFilterMenu then activeFilterMenu:Destroy() activeFilterMenu = nil end
 	local fFrame = Instance.new("Frame")
 	fFrame.Size = UDim2.new(0, 140, 0, 180)
@@ -1429,10 +1303,8 @@ local function createFilterMenu(titleText, filterTable, filterList, isDisplayFil
 	fCorner.CornerRadius = UDim.new(0, 4)
 	fCorner.Parent = fFrame
 
-	local tCol = active and getCAct() or getCIna()
-
 	local fStroke = Instance.new("UIStroke")
-	fStroke.Color = tCol
+	fStroke.Color = active and COLOR_ACTIVE or COLOR_INACTIVE
 	fStroke.Thickness = 1.5
 	fStroke.Parent = fFrame
 
@@ -1447,7 +1319,7 @@ local function createFilterMenu(titleText, filterTable, filterList, isDisplayFil
 	fScroll.BackgroundColor3 = COLOR_PANEL_BG
 	fScroll.BorderSizePixel = 0
 	fScroll.ScrollBarThickness = 2
-	fScroll.ScrollBarImageColor3 = tCol
+	fScroll.ScrollBarImageColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE
 	fScroll.CanvasSize = UDim2.new(0, 0, 0, #filterList * 18)
 	fScroll.Parent = fFrame
 
@@ -1460,7 +1332,7 @@ local function createFilterMenu(titleText, filterTable, filterList, isDisplayFil
 	fTitle.Position = UDim2.new(0, 6, 0, 0)
 	fTitle.BackgroundTransparency = 1
 	fTitle.Text = "// " .. string.upper(titleText) .. " //"
-	fTitle.TextColor3 = tCol
+	fTitle.TextColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE
 	fTitle.Font = Enum.Font.Code
 	fTitle.TextSize = 9
 	fTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -1486,11 +1358,8 @@ local function createFilterMenu(titleText, filterTable, filterList, isDisplayFil
 	fLayout.Padding = UDim.new(0, 3)
 	fLayout.Parent = fScroll
 
-	local uiRows = {}
-
 	for _, name in ipairs(filterList) do
-		local key = (isDisplayFilter or isRadio) and name or string.lower(name)
-		if isRadio then key = string.lower(name) end
+		local key = isDisplayFilter and name or string.lower(name)
 		
 		local row = Instance.new("Frame")
 		row.Size = UDim2.new(1, -4, 0, 15)
@@ -1501,7 +1370,7 @@ local function createFilterMenu(titleText, filterTable, filterList, isDisplayFil
 		chk.Size = UDim2.new(0, 18, 1, 0)
 		chk.BackgroundTransparency = 1
 		chk.Text = filterTable[key] and "[#]" or "[ ]"
-		chk.TextColor3 = filterTable[key] and getCAct() or Color3.fromRGB(100, 100, 110)
+		chk.TextColor3 = filterTable[key] and Color3.fromRGB(210, 160, 255) or Color3.fromRGB(100, 100, 110)
 		chk.Font = Enum.Font.Code
 		chk.TextSize = 9
 		chk.TextXAlignment = Enum.TextXAlignment.Center
@@ -1513,14 +1382,12 @@ local function createFilterMenu(titleText, filterTable, filterList, isDisplayFil
 		lbl.Position = UDim2.new(0, 20, 0, 0)
 		lbl.BackgroundTransparency = 1
 		lbl.Text = name
-		lbl.TextColor3 = filterTable[key] and getCAct() or Color3.fromRGB(100, 100, 110)
+		lbl.TextColor3 = filterTable[key] and Color3.fromRGB(210, 160, 255) or Color3.fromRGB(100, 100, 110)
 		lbl.Font = Enum.Font.Code
 		lbl.TextSize = 8
 		lbl.TextXAlignment = Enum.TextXAlignment.Left
 		lbl.Active = false
 		lbl.Parent = row
-
-		table.insert(uiRows, {key = key, chk = chk, lbl = lbl, name = name})
 
 		local chkStartPos = nil
 		chk.InputBegan:Connect(function(input)
@@ -1535,51 +1402,22 @@ local function createFilterMenu(titleText, filterTable, filterList, isDisplayFil
 				local dist = (input.Position - chkStartPos).Magnitude
 				chkStartPos = nil
 				if dist < 6 then
-					if isRadio then
-						for k in pairs(filterTable) do filterTable[k] = false end
-						filterTable[key] = true
-						activePalette = name
-						
-						local newCAct = getCAct()
-						local newCIna = getCIna()
-						local newTCol = active and newCAct or newCIna
-						
-						for _, r in ipairs(uiRows) do
-							local isActiveRow = filterTable[r.key]
-							r.chk.Text = isActiveRow and "[#]" or "[ ]"
-							local color = isActiveRow and newCAct or Color3.fromRGB(100, 100, 110)
-							r.chk.TextColor3 = color
-							r.lbl.TextColor3 = color
-						end
-						
-						fStroke.Color = newTCol
-						fSc.ScrollBarImageColor3 = newTCol
-						fTitle.TextColor3 = newTCol
+					filterTable[key] = not filterTable[key]
+					chk.Text = filterTable[key] and "[#]" or "[ ]"
+					local color = filterTable[key] and Color3.fromRGB(210, 160, 255) or Color3.fromRGB(100, 100, 110)
+					chk.TextColor3 = color
+					lbl.TextColor3 = color
 
-						updateUI()
-						removeESPType("Monster")
-						removeESPType("Machine")
-						removeESPType("Item")
-						removeESPType("Player")
+					if isDisplayFilter then
+						removeESPType(espType)
 						scanAndApplyESP()
 					else
-						filterTable[key] = not filterTable[key]
-						chk.Text = filterTable[key] and "[#]" or "[ ]"
-						local color = filterTable[key] and getCAct() or Color3.fromRGB(100, 100, 110)
-						chk.TextColor3 = color
-						lbl.TextColor3 = color
-
-						if isDisplayFilter then
-							removeESPType(espType)
+						if titleText == "Twisted Filter" and toggleStates.Twisted_ESP then 
+							removeESPType("Monster") 
 							scanAndApplyESP()
-						else
-							if titleText == "Twisted Filter" and toggleStates.Twisted_ESP then 
-								removeESPType("Monster") 
-								scanAndApplyESP()
-							elseif titleText == "Item Filter" and toggleStates.Item_ESP then 
-								removeESPType("Item") 
-								scanAndApplyESP() 
-							end
+						elseif titleText == "Item Filter" and toggleStates.Item_ESP then 
+							removeESPType("Item") 
+							scanAndApplyESP() 
 						end
 					end
 				end
@@ -1588,7 +1426,7 @@ local function createFilterMenu(titleText, filterTable, filterList, isDisplayFil
 	end
 end
 
-local function createToggle(text, id, order, filterData, displayData, isRadioMenu)
+local function createToggle(text, id, order, filterData, displayData)
 	local wrapper = Instance.new("Frame")
 	wrapper.Size = UDim2.new(1, -8, 0, 14)
 	wrapper.BackgroundTransparency = 1
@@ -1602,7 +1440,7 @@ local function createToggle(text, id, order, filterData, displayData, isRadioMen
 	checkBtn.BackgroundTransparency = 0.5
 	checkBtn.BorderSizePixel = 0
 	checkBtn.Text = toggleStates[id] and "[#]" or "[ ]"
-	checkBtn.TextColor3 = getCIna()
+	checkBtn.TextColor3 = COLOR_INACTIVE
 	checkBtn.TextTransparency = 1
 	checkBtn.Font = Enum.Font.Code
 	checkBtn.TextSize = 9
@@ -1616,7 +1454,7 @@ local function createToggle(text, id, order, filterData, displayData, isRadioMen
 
 	local btnStroke = Instance.new("UIStroke")
 	btnStroke.Thickness = 1
-	btnStroke.Color = getCIna()
+	btnStroke.Color = COLOR_INACTIVE
 	btnStroke.Transparency = 0.7
 	btnStroke.Parent = checkBtn
 
@@ -1632,7 +1470,7 @@ local function createToggle(text, id, order, filterData, displayData, isRadioMen
 	titleLabel.Position = UDim2.new(0, 22, 0, 0)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.Text = text
-	titleLabel.TextColor3 = getCIna()
+	titleLabel.TextColor3 = COLOR_INACTIVE
 	titleLabel.TextTransparency = 1
 	titleLabel.Font = Enum.Font.Code
 	titleLabel.TextSize = 9
@@ -1672,7 +1510,7 @@ local function createToggle(text, id, order, filterData, displayData, isRadioMen
 		arrowBtn.Position = UDim2.new(1, -currentRightOffset, 0, 0)
 		arrowBtn.BackgroundTransparency = 1
 		arrowBtn.Text = ">"
-		arrowBtn.TextColor3 = getCIna()
+		arrowBtn.TextColor3 = COLOR_INACTIVE
 		arrowBtn.TextTransparency = 1
 		arrowBtn.Font = Enum.Font.Code
 		arrowBtn.TextSize = 10
@@ -1693,7 +1531,7 @@ local function createToggle(text, id, order, filterData, displayData, isRadioMen
 				local dist = (input.Position - arrowStartPos).Magnitude
 				arrowStartPos = nil
 				if dist < 6 then
-					createFilterMenu(filterData.title, filterData.table, filterData.list, false, nil, isRadioMenu)
+					createFilterMenu(filterData.title, filterData.table, filterData.list, false)
 				end
 			end
 		end)
@@ -1707,7 +1545,7 @@ local function createToggle(text, id, order, filterData, displayData, isRadioMen
 		upArrowBtn.Position = UDim2.new(1, -currentRightOffset, 0, 0)
 		upArrowBtn.BackgroundTransparency = 1
 		upArrowBtn.Text = "^"
-		upArrowBtn.TextColor3 = getCIna()
+		upArrowBtn.TextColor3 = COLOR_INACTIVE
 		upArrowBtn.TextTransparency = 1
 		upArrowBtn.Font = Enum.Font.Code
 		upArrowBtn.TextSize = 10
@@ -1728,7 +1566,7 @@ local function createToggle(text, id, order, filterData, displayData, isRadioMen
 				local dist = (input.Position - upStartPos).Magnitude
 				upStartPos = nil
 				if dist < 6 then
-					createFilterMenu(displayData.title, displayData.table, displayFilterList, true, displayData.espType, false)
+					createFilterMenu(displayData.title, displayData.table, displayFilterList, true, displayData.espType)
 				end
 			end
 		end)
@@ -1745,20 +1583,110 @@ createToggle("Stat_HUD", "Stat_HUD", 6)
 createToggle("Instant_Interact", "Instant_Interact", 7)
 createToggle("Auto_Escape", "Auto_Escape", 8)
 createToggle("Hide_Radar", "Hide_Radar", 9)
-createToggle("ColorShift", "ColorShift", 10, {title = "Color Shift", table = paletteSelections, list = PaletteNames}, nil, true)
 
 local fadeTweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
 local cachedBlips = {} 
+
+local function updateUI()
+	if shuttingDown then return end
+	local targetColor = active and COLOR_ACTIVE or COLOR_INACTIVE
+	local ti = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+	task.spawn(function()
+		if not minimized then TweenService:Create(statusText, fadeTweenInfo, {TextTransparency = 1}):Play() task.wait(0.15) end
+		statusText.Text = active and "<0>" or "<X>"
+		if not minimized and not shuttingDown then TweenService:Create(statusText, fadeTweenInfo, {TextTransparency = 0}):Play() end
+	end)
+
+	TweenService:Create(statusText, ti, {TextColor3 = targetColor}):Play()
+	TweenService:Create(outerStroke, ti, {Color = targetColor}):Play()
+	TweenService:Create(headerTag, ti, {TextColor3 = targetColor}):Play()
+	TweenService:Create(bottomHeader, ti, {TextColor3 = targetColor}):Play()
+	
+	TweenService:Create(statOuterStroke, ti, {Color = targetColor}):Play()
+	TweenService:Create(statInnerStroke, ti, {Color = targetColor, Transparency = active and 0.5 or 0.8}):Play()
+	TweenService:Create(statTitle, ti, {TextColor3 = targetColor}):Play()
+	TweenService:Create(statDivider, ti, {BackgroundColor3 = targetColor}):Play()
+	
+	TweenService:Create(radarOuterStroke, ti, {Color = targetColor}):Play()
+	for _, techEl in ipairs(techCornerElements) do TweenService:Create(techEl, ti, {BackgroundColor3 = targetColor}):Play() end
+	TweenService:Create(crossV, ti, {BackgroundColor3 = targetColor}):Play()
+	TweenService:Create(crossH, ti, {BackgroundColor3 = targetColor}):Play()
+	TweenService:Create(radarScanner, ti, {BackgroundColor3 = targetColor}):Play()
+	TweenService:Create(radarCenter, ti, {BackgroundColor3 = targetColor}):Play()
+	TweenService:Create(toggleContainer, ti, {ScrollBarImageColor3 = targetColor}):Play()
+	for _, rStroke in ipairs(radarRings) do TweenService:Create(rStroke, ti, {Color = targetColor}):Play() end
+	
+	for _, item in ipairs(radialLayers) do
+		if active then
+			TweenService:Create(item.instance, ti, {
+				BackgroundColor3 = item.color,
+				BackgroundTransparency = 0.88 + (0.09 * (1 - math.clamp(item.ratio, 0, 1)))
+			}):Play()
+		else
+			TweenService:Create(item.instance, ti, {
+				BackgroundTransparency = 1
+			}):Play()
+		end
+	end
+
+	for _, blip in pairs(cachedBlips) do
+		local stroke = blip:FindFirstChildOfClass("UIStroke")
+		local targetBg, targetStroke
+		
+		if active then
+			if blip.Name == "Twisted" then
+				targetBg = Color3.fromRGB(0, 0, 0)
+				targetStroke = COLOR_ACTIVE
+			elseif blip.Name == "Player" then
+				targetBg = Color3.fromRGB(255, 255, 255)
+				targetStroke = COLOR_ACTIVE
+			elseif blip.Name == "Machine" then
+				targetBg = COLOR_ACTIVE
+				targetStroke = Color3.fromRGB(0, 0, 0)
+			end
+		else
+			if blip.Name == "Twisted" then
+				targetBg = Color3.fromRGB(130, 130, 130)
+				targetStroke = Color3.fromRGB(255, 255, 255)
+			elseif blip.Name == "Player" then
+				targetBg = Color3.fromRGB(255, 255, 255)
+				targetStroke = Color3.fromRGB(0, 0, 0)
+			elseif blip.Name == "Machine" then
+				targetBg = Color3.fromRGB(0, 0, 0) 
+				targetStroke = Color3.fromRGB(255, 255, 255)
+			end
+		end
+
+		if targetBg then TweenService:Create(blip, ti, {BackgroundColor3 = targetBg}):Play() end
+		if stroke and targetStroke then TweenService:Create(stroke, ti, {Color = targetStroke}):Play() end
+	end
+	
+	for _, item in ipairs(toggleList) do 
+		if item.label then TweenService:Create(item.label, ti, {TextColor3 = targetColor}):Play() end
+		if item.badge then TweenService:Create(item.badge, ti, {TextColor3 = targetColor}):Play() end
+		if item.stroke then TweenService:Create(item.stroke, ti, {Color = targetColor}):Play() end
+		if item.arrow then TweenService:Create(item.arrow, ti, {TextColor3 = targetColor}):Play() end
+	end
+	if not minimized then
+		TweenService:Create(innerStroke, ti, {Color = targetColor, Transparency = active and 0.5 or 0.8}):Play()
+		if togglesOpen then 
+			TweenService:Create(extOuterStroke, ti, {Color = targetColor}):Play()
+			TweenService:Create(extSideL, ti, {BackgroundColor3 = targetColor, BackgroundTransparency = active and 0.5 or 0.8}):Play()
+			TweenService:Create(extSideR, ti, {BackgroundColor3 = targetColor, BackgroundTransparency = active and 0.5 or 0.8}):Play()
+		end
+	end
+end
 
 local function toggleExtension()
 	if minimized or shuttingDown then return end
 	togglesOpen = not togglesOpen
 	local ti = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	if togglesOpen then
-		TweenService:Create(extendedFrame, ti, {Size = UDim2.new(1, 0, 0, 169)}):Play()
-		TweenService:Create(extOuterStroke, ti, {Transparency = 0, Color = active and getCAct() or getCIna()}):Play()
-		TweenService:Create(extSideL, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and getCAct() or getCIna()}):Play()
-		TweenService:Create(extSideR, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and getCAct() or getCIna()}):Play()
+		TweenService:Create(extendedFrame, ti, {Size = UDim2.new(1, 0, 0, 155)}):Play()
+		TweenService:Create(extOuterStroke, ti, {Transparency = 0, Color = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
+		TweenService:Create(extSideL, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
+		TweenService:Create(extSideR, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
 		for _, item in ipairs(toggleList) do 
 			if item.label then TweenService:Create(item.label, ti, {TextTransparency = 0}):Play() end
 			if item.badge then TweenService:Create(item.badge, ti, {TextTransparency = 0}):Play() end
@@ -1806,10 +1734,10 @@ local function toggleMinimize()
 		TweenService:Create(innerStroke, ti, {Transparency = active and 0.5 or 0.8}):Play()
 		TweenService:Create(bottomHeader, ti, {TextTransparency = 0}):Play()
 		if togglesOpen then
-			TweenService:Create(extendedFrame, ti, {Size = UDim2.new(1, 0, 0, 169)}):Play()
+			TweenService:Create(extendedFrame, ti, {Size = UDim2.new(1, 0, 0, 155)}):Play()
 			TweenService:Create(extOuterStroke, ti, {Transparency = 0}):Play()
-			TweenService:Create(extSideL, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and getCAct() or getCIna()}):Play()
-			TweenService:Create(extSideR, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and getCAct() or getCIna()}):Play()
+			TweenService:Create(extSideL, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
+			TweenService:Create(extSideR, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
 			for _, item in ipairs(toggleList) do 
 				if item.label then TweenService:Create(item.label, ti, {TextTransparency = 0}):Play() end
 				if item.badge then TweenService:Create(item.badge, ti, {TextTransparency = 0}):Play() end
@@ -1817,6 +1745,13 @@ local function toggleMinimize()
 			end
 		end
 	end
+end
+
+local function toggle()
+	active = not active
+	if not active then resetMomentum() end
+	if active then soundOn:Play() else soundOff:Play() end
+	updateUI()
 end
 
 local function wipeSystem()
@@ -1980,7 +1915,7 @@ local function registerDescendant(desc)
 		if isTwisted(desc) then 
 			TrackedEntities.Twisteds[desc] = true 
 		elseif isMachine(desc) then
-			registerMachine(desc)
+			TrackedEntities.Machines[desc] = true
 		end
 	elseif desc:IsA("ProximityPrompt") then
 		TrackedEntities.Prompts[desc] = true
@@ -2044,17 +1979,15 @@ local function getOrCreateBlip(target, blipType)
 	stroke.Thickness = 1
 	stroke.Parent = blip
 	
-	local cAct = getCAct()
-	
 	if active then
 		if blipType == "Twisted" then
 			blip.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
-			stroke.Color = cAct
+			stroke.Color = COLOR_ACTIVE
 		elseif blipType == "Player" then
 			blip.BackgroundColor3 = Color3.fromRGB(255, 255, 255) 
-			stroke.Color = cAct
+			stroke.Color = COLOR_ACTIVE
 		elseif blipType == "Machine" then
-			blip.BackgroundColor3 = cAct 
+			blip.BackgroundColor3 = COLOR_ACTIVE 
 			stroke.Color = Color3.fromRGB(0, 0, 0)
 		end
 	else
