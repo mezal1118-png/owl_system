@@ -169,6 +169,15 @@ for _, m in ipairs(MonsterList) do monsterFilters[string.lower(m)] = true end
 local itemFilters = {}
 for _, itm in ipairs(ESPItemList) do itemFilters[string.lower(itm)] = true end
 
+local displayFilters = {
+	Monster = {Highlight = true, Header = true},
+	Machine = {Highlight = true, Header = true},
+	Item = {Highlight = true, Header = true},
+	Player = {Highlight = true, Header = true}
+}
+
+local displayFilterList = {"Highlight", "Header"}
+
 local espObjects = {Monster = {}, Machine = {}, Item = {}, Player = {}}
 local promptConnections = {}
 
@@ -192,18 +201,13 @@ local TrackedEntities = {
 
 local function isTwisted(model)
 	if not model or not model:IsA("Model") or Players:GetPlayerFromCharacter(model) then return false end
+	if CollectionService:HasTag(model, "Twisted") or CollectionService:HasTag(model, "Monster") then return true end
+	
 	local lowerName = string.lower(model.Name)
+	if string.find(lowerName, "twisted") or string.find(lowerName, "monster") then return true end
 	
-	if not string.find(lowerName, "monster") and not CollectionService:HasTag(model, "Monster") then
-		return false
-	end
-
-	if CollectionService:HasTag(model, "Twisted") or CollectionService:HasTag(model, "Monster") then 
-		return true 
-	end
-	
-	for filterKey, enabled in pairs(monsterFilters) do
-		if enabled and string.find(lowerName, filterKey) then
+	for filterKey in pairs(monsterFilters) do
+		if string.find(lowerName, filterKey) then
 			return true
 		end
 	end
@@ -218,6 +222,16 @@ local function isMachine(model)
 	local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true)
 	if prompt and (string.lower(prompt.ActionText) == "extract" or string.find(string.lower(prompt.ObjectText or ""), "generator") or string.find(string.lower(prompt.ObjectText or ""), "machine")) then
 		return true
+	end
+	return false
+end
+
+local function isTwistedAllowed(model)
+	local lowerName = string.lower(model.Name)
+	for filterKey, enabled in pairs(monsterFilters) do
+		if enabled and string.find(lowerName, filterKey) then
+			return true
+		end
 	end
 	return false
 end
@@ -1074,10 +1088,6 @@ local function applyESP(target, espType, labelText)
 	if not target then return end
 	
 	local adorneeModel = target:IsA("Model") and target or target:FindFirstAncestorOfClass("Model") or target
-	if adorneeModel:FindFirstChild("OWL_ESP_HL") or target:FindFirstChild("OWL_ESP_HL") then 
-		return 
-	end
-
 	if espType == "Machine" then
 		local isDone = false
 		local prompt = target:FindFirstChildWhichIsA("ProximityPrompt", true)
@@ -1085,65 +1095,92 @@ local function applyESP(target, espType, labelText)
 		if isDone then removeSingleESP(adorneeModel) return end
 	end
 	
-	local hl = Instance.new("Highlight")
-	hl.Name = "OWL_ESP_HL"
-	hl.FillTransparency = 0.55
-	hl.Adornee = adorneeModel
-	hl.Parent = adorneeModel
-
-	local bg = Instance.new("BillboardGui")
-	bg.Name = "OWL_ESP_BG"
-	bg.Size = UDim2.new(0, 95, 0, 18)
-	bg.StudsOffset = Vector3.new(0, 3.5, 0)
-	bg.AlwaysOnTop = true
-	bg.Adornee = adorneeModel:FindFirstChild("HumanoidRootPart") or adorneeModel.PrimaryPart or adorneeModel:FindFirstChildWhichIsA("BasePart") or target
-	bg.Parent = adorneeModel
-
-	local headerFrame = Instance.new("Frame")
-	headerFrame.Size = UDim2.new(1, 0, 1, 0)
-	headerFrame.BackgroundTransparency = 0.8
-	headerFrame.BorderSizePixel = 0
-	headerFrame.Parent = bg
-
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 3)
-	corner.Parent = headerFrame
-
-	local txt = Instance.new("TextLabel")
-	txt.Size = UDim2.new(1, 0, 1, 0)
-	txt.BackgroundTransparency = 1
-	txt.Font = Enum.Font.Code
-	txt.TextScaled = true
-	txt.Parent = headerFrame
-
-	if espType == "Monster" then
-		hl.FillColor = COLOR_ACTIVE
-		hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-		headerFrame.BackgroundColor3 = Color3.fromRGB(20, 0, 30)
-		txt.TextColor3 = Color3.fromRGB(210, 160, 255)
-		local cleanName = string.gsub(string.gsub(string.gsub(string.lower(adorneeModel.Name), "monster", ""), "twisted", ""), "^%s*(.-)%s*$", "%1")
-		txt.Text = cleanName ~= "" and string.upper(string.sub(cleanName, 1, 1)) .. string.sub(cleanName, 2) or "Twisted"
-	elseif espType == "Machine" then
-		hl.FillColor = Color3.fromRGB(0, 0, 0)
-		hl.OutlineColor = COLOR_ACTIVE
-		headerFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-		txt.TextColor3 = COLOR_ACTIVE
-		txt.Text = "Machine"
-	elseif espType == "Item" then
-		hl.FillColor = Color3.fromRGB(0, 0, 0)
-		hl.OutlineColor = Color3.fromRGB(255, 255, 255)
-		headerFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-		txt.TextColor3 = Color3.fromRGB(255, 255, 255)
-		txt.Text = labelText or "Item"
-	elseif espType == "Player" then
-		hl.FillColor = Color3.fromRGB(255, 255, 255)
-		hl.OutlineColor = COLOR_ACTIVE
-		headerFrame.BackgroundColor3 = Color3.fromRGB(10, 0, 15)
-		txt.TextColor3 = COLOR_ACTIVE
-		txt.Text = labelText or adorneeModel.Name
+	local displayCfg = displayFilters[espType] or {Highlight = true, Header = true}
+	
+	if not displayCfg.Highlight and not displayCfg.Header then
+		removeSingleESP(adorneeModel)
+		return
 	end
-	table.insert(espObjects[espType], hl)
-	table.insert(espObjects[espType], bg)
+	
+	local hl = adorneeModel:FindFirstChild("OWL_ESP_HL")
+	if displayCfg.Highlight then
+		if not hl then
+			hl = Instance.new("Highlight")
+			hl.Name = "OWL_ESP_HL"
+			hl.FillTransparency = 0.55
+			hl.Adornee = adorneeModel
+			hl.Parent = adorneeModel
+			
+			if espType == "Monster" then
+				hl.FillColor = COLOR_ACTIVE
+				hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+			elseif espType == "Machine" then
+				hl.FillColor = Color3.fromRGB(0, 0, 0)
+				hl.OutlineColor = COLOR_ACTIVE
+			elseif espType == "Item" then
+				hl.FillColor = Color3.fromRGB(0, 0, 0)
+				hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+			elseif espType == "Player" then
+				hl.FillColor = Color3.fromRGB(255, 255, 255)
+				hl.OutlineColor = COLOR_ACTIVE
+			end
+			table.insert(espObjects[espType], hl)
+		end
+	elseif hl then
+		hl:Destroy()
+	end
+
+	local bg = adorneeModel:FindFirstChild("OWL_ESP_BG")
+	if displayCfg.Header then
+		if not bg then
+			bg = Instance.new("BillboardGui")
+			bg.Name = "OWL_ESP_BG"
+			bg.Size = UDim2.new(0, 95, 0, 18)
+			bg.StudsOffset = Vector3.new(0, 3.5, 0)
+			bg.AlwaysOnTop = true
+			bg.Adornee = adorneeModel:FindFirstChild("HumanoidRootPart") or adorneeModel.PrimaryPart or adorneeModel:FindFirstChildWhichIsA("BasePart") or target
+			bg.Parent = adorneeModel
+
+			local headerFrame = Instance.new("Frame")
+			headerFrame.Size = UDim2.new(1, 0, 1, 0)
+			headerFrame.BackgroundTransparency = 0.8
+			headerFrame.BorderSizePixel = 0
+			headerFrame.Parent = bg
+
+			local corner = Instance.new("UICorner")
+			corner.CornerRadius = UDim.new(0, 3)
+			corner.Parent = headerFrame
+
+			local txt = Instance.new("TextLabel")
+			txt.Size = UDim2.new(1, 0, 1, 0)
+			txt.BackgroundTransparency = 1
+			txt.Font = Enum.Font.Code
+			txt.TextScaled = true
+			txt.Parent = headerFrame
+
+			if espType == "Monster" then
+				headerFrame.BackgroundColor3 = Color3.fromRGB(20, 0, 30)
+				txt.TextColor3 = Color3.fromRGB(210, 160, 255)
+				local cleanName = string.gsub(string.gsub(string.gsub(string.lower(adorneeModel.Name), "monster", ""), "twisted", ""), "^%s*(.-)%s*$", "%1")
+				txt.Text = cleanName ~= "" and string.upper(string.sub(cleanName, 1, 1)) .. string.sub(cleanName, 2) or "Twisted"
+			elseif espType == "Machine" then
+				headerFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+				txt.TextColor3 = COLOR_ACTIVE
+				txt.Text = "Machine"
+			elseif espType == "Item" then
+				headerFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+				txt.TextColor3 = Color3.fromRGB(255, 255, 255)
+				txt.Text = labelText or "Item"
+			elseif espType == "Player" then
+				headerFrame.BackgroundColor3 = Color3.fromRGB(10, 0, 15)
+				txt.TextColor3 = COLOR_ACTIVE
+				txt.Text = labelText or adorneeModel.Name
+			end
+			table.insert(espObjects[espType], bg)
+		end
+	elseif bg then
+		bg:Destroy()
+	end
 end
 
 local function removeESPType(espType)
@@ -1154,7 +1191,13 @@ end
 local function scanAndApplyESP()
 	if toggleStates.Twisted_ESP then
 		for desc in pairs(TrackedEntities.Twisteds) do
-			if isTwisted(desc) then applyESP(desc, "Monster") end
+			if isTwisted(desc) then
+				if isTwistedAllowed(desc) then
+					applyESP(desc, "Monster")
+				else
+					removeSingleESP(desc)
+				end
+			end
 		end
 	end
 	
@@ -1164,7 +1207,11 @@ local function scanAndApplyESP()
 		end
 		for desc in pairs(TrackedEntities.Prompts) do
 			if toggleStates.Item_ESP and desc.ActionText ~= "Ichor" and desc.ActionText ~= "" then
-				if desc.Enabled and isItemAllowed(desc.ActionText) then applyESP(desc.Parent, "Item", desc.ActionText) else removeSingleESP(desc.Parent) end
+				if desc.Enabled and isItemAllowed(desc.ActionText) then 
+					applyESP(desc.Parent, "Item", desc.ActionText) 
+				else 
+					removeSingleESP(desc.Parent) 
+				end
 			end
 		end
 	end
@@ -1210,6 +1257,8 @@ local function trackPrompt(prompt)
 				removeSingleESP(prompt.Parent) 
 			elseif toggleStates.Item_ESP and isItemAllowed(prompt.ActionText) then 
 				applyESP(prompt.Parent, "Item", prompt.ActionText) 
+			else
+				removeSingleESP(prompt.Parent)
 			end
 		end
 	end)
@@ -1246,7 +1295,7 @@ local function executeToggleLogic(id, state)
 end
 
 local activeFilterMenu = nil
-local function createFilterMenu(titleText, filterTable, filterList)
+local function createFilterMenu(titleText, filterTable, filterList, isDisplayFilter, espType)
 	if activeFilterMenu then activeFilterMenu:Destroy() activeFilterMenu = nil end
 	local fFrame = Instance.new("Frame")
 	fFrame.Size = UDim2.new(0, 140, 0, 180)
@@ -1280,7 +1329,7 @@ local function createFilterMenu(titleText, filterTable, filterList)
 	fScroll.BorderSizePixel = 0
 	fScroll.ScrollBarThickness = 2
 	fScroll.ScrollBarImageColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE
-	fScroll.CanvasSize = UDim2.new(0, 0, 0, #filterList * 16)
+	fScroll.CanvasSize = UDim2.new(0, 0, 0, #filterList * 18)
 	fScroll.Parent = fFrame
 
 	local scrollCorner = Instance.new("UICorner")
@@ -1315,36 +1364,78 @@ local function createFilterMenu(titleText, filterTable, filterList)
 	end)
 
 	local fLayout = Instance.new("UIListLayout")
-	fLayout.Padding = UDim.new(0, 2)
+	fLayout.Padding = UDim.new(0, 3)
 	fLayout.Parent = fScroll
 
 	for _, name in ipairs(filterList) do
-		local key = string.lower(name)
-		local itemBtn = Instance.new("TextLabel")
-		itemBtn.Size = UDim2.new(1, -4, 0, 14)
-		itemBtn.BackgroundTransparency = 1
-		itemBtn.Text = (filterTable[key] and "[#] " or "[ ] ") .. name
-		itemBtn.TextColor3 = filterTable[key] and Color3.fromRGB(210, 160, 255) or Color3.fromRGB(100, 100, 110)
-		itemBtn.Font = Enum.Font.Code
-		itemBtn.TextSize = 8
-		itemBtn.TextXAlignment = Enum.TextXAlignment.Left
-		itemBtn.Active = true
-		itemBtn.Parent = fScroll
+		local key = isDisplayFilter and name or string.lower(name)
+		
+		local row = Instance.new("Frame")
+		row.Size = UDim2.new(1, -4, 0, 15)
+		row.BackgroundTransparency = 1
+		row.Parent = fScroll
+		
+		local chk = Instance.new("TextLabel")
+		chk.Size = UDim2.new(0, 18, 1, 0)
+		chk.BackgroundTransparency = 1
+		chk.Text = filterTable[key] and "[#]" or "[ ]"
+		chk.TextColor3 = filterTable[key] and Color3.fromRGB(210, 160, 255) or Color3.fromRGB(100, 100, 110)
+		chk.Font = Enum.Font.Code
+		chk.TextSize = 9
+		chk.TextXAlignment = Enum.TextXAlignment.Center
+		chk.Active = true
+		chk.Parent = row
+		
+		local lbl = Instance.new("TextLabel")
+		lbl.Size = UDim2.new(1, -22, 1, 0)
+		lbl.Position = UDim2.new(0, 20, 0, 0)
+		lbl.BackgroundTransparency = 1
+		lbl.Text = name
+		lbl.TextColor3 = filterTable[key] and Color3.fromRGB(210, 160, 255) or Color3.fromRGB(100, 100, 110)
+		lbl.Font = Enum.Font.Code
+		lbl.TextSize = 8
+		lbl.TextXAlignment = Enum.TextXAlignment.Left
+		lbl.Active = false
+		lbl.Parent = row
 
-		itemBtn.InputBegan:Connect(function(input)
+		local chkStartPos = nil
+		chk.InputBegan:Connect(function(input)
 			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-				filterTable[key] = not filterTable[key]
-				itemBtn.Text = (filterTable[key] and "[#] " or "[ ] ") .. name
-				itemBtn.TextColor3 = filterTable[key] and Color3.fromRGB(210, 160, 255) or Color3.fromRGB(100, 100, 110)
+				chkStartPos = input.Position
+			end
+		end)
 
-				if titleText == "Twisted Filter" and toggleStates.Twisted_ESP then removeESPType("Monster") scanAndApplyESP()
-				elseif titleText == "Item Filter" and toggleStates.Item_ESP then removeESPType("Item") scanAndApplyESP() end
+		chk.InputEnded:Connect(function(input)
+			if not chkStartPos then return end
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				local dist = (input.Position - chkStartPos).Magnitude
+				chkStartPos = nil
+				if dist < 6 then
+					filterTable[key] = not filterTable[key]
+					chk.Text = filterTable[key] and "[#]" or "[ ]"
+					local color = filterTable[key] and Color3.fromRGB(210, 160, 255) or Color3.fromRGB(100, 100, 110)
+					chk.TextColor3 = color
+					lbl.TextColor3 = color
+
+					if isDisplayFilter then
+						removeESPType(espType)
+						scanAndApplyESP()
+					else
+						if titleText == "Twisted Filter" and toggleStates.Twisted_ESP then 
+							removeESPType("Monster") 
+							scanAndApplyESP()
+						elseif titleText == "Item Filter" and toggleStates.Item_ESP then 
+							removeESPType("Item") 
+							scanAndApplyESP() 
+						end
+					end
+				end
 			end
 		end)
 	end
 end
 
-local function createToggle(text, id, order, filterData)
+local function createToggle(text, id, order, filterData, displayData)
 	local wrapper = Instance.new("Frame")
 	wrapper.Size = UDim2.new(1, -8, 0, 14)
 	wrapper.BackgroundTransparency = 1
@@ -1376,8 +1467,15 @@ local function createToggle(text, id, order, filterData)
 	btnStroke.Transparency = 0.7
 	btnStroke.Parent = checkBtn
 
+	local rightButtonsWidth = 0
+	if filterData and displayData then
+		rightButtonsWidth = 28
+	elseif filterData or displayData then
+		rightButtonsWidth = 14
+	end
+
 	local titleLabel = Instance.new("TextLabel")
-	titleLabel.Size = UDim2.new(1, filterData and -38 or -24, 1, 0)
+	titleLabel.Size = UDim2.new(1, -24 - rightButtonsWidth, 1, 0)
 	titleLabel.Position = UDim2.new(0, 22, 0, 0)
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.Text = text
@@ -1412,10 +1510,13 @@ local function createToggle(text, id, order, filterData)
 
 	table.insert(toggleList, {label = titleLabel, badge = checkBtn, stroke = btnStroke})
 
+	local currentRightOffset = 0
+
 	if filterData then
+		currentRightOffset = currentRightOffset + 14
 		local arrowBtn = Instance.new("TextLabel")
 		arrowBtn.Size = UDim2.new(0, 14, 1, 0)
-		arrowBtn.Position = UDim2.new(1, -14, 0, 0)
+		arrowBtn.Position = UDim2.new(1, -currentRightOffset, 0, 0)
 		arrowBtn.BackgroundTransparency = 1
 		arrowBtn.Text = ">"
 		arrowBtn.TextColor3 = COLOR_INACTIVE
@@ -1439,19 +1540,54 @@ local function createToggle(text, id, order, filterData)
 				local dist = (input.Position - arrowStartPos).Magnitude
 				arrowStartPos = nil
 				if dist < 6 then
-					createFilterMenu(filterData.title, filterData.table, filterData.list)
+					createFilterMenu(filterData.title, filterData.table, filterData.list, false)
 				end
 			end
 		end)
 		table.insert(toggleList, {arrow = arrowBtn})
 	end
+
+	if displayData then
+		currentRightOffset = currentRightOffset + 14
+		local upArrowBtn = Instance.new("TextLabel")
+		upArrowBtn.Size = UDim2.new(0, 14, 1, 0)
+		upArrowBtn.Position = UDim2.new(1, -currentRightOffset, 0, 0)
+		upArrowBtn.BackgroundTransparency = 1
+		upArrowBtn.Text = "^"
+		upArrowBtn.TextColor3 = COLOR_INACTIVE
+		upArrowBtn.TextTransparency = 1
+		upArrowBtn.Font = Enum.Font.Code
+		upArrowBtn.TextSize = 10
+		upArrowBtn.Active = true
+		upArrowBtn.Parent = wrapper
+
+		local upStartPos = nil
+		upArrowBtn.InputBegan:Connect(function(input)
+			if shuttingDown then return end
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				upStartPos = input.Position
+			end
+		end)
+
+		upArrowBtn.InputEnded:Connect(function(input)
+			if shuttingDown or not upStartPos then return end
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				local dist = (input.Position - upStartPos).Magnitude
+				upStartPos = nil
+				if dist < 6 then
+					createFilterMenu(displayData.title, displayData.table, displayFilterList, true, displayData.espType)
+				end
+			end
+		end)
+		table.insert(toggleList, {arrow = upArrowBtn})
+	end
 end
 
 createToggle("Fullbright", "Fullbright", 1)
-createToggle("Twisted_ESP", "Twisted_ESP", 2, {title = "Twisted Filter", table = monsterFilters, list = MonsterList})
-createToggle("Machine_ESP", "Machine_ESP", 3)
-createToggle("Item_ESP", "Item_ESP", 4, {title = "Item Filter", table = itemFilters, list = ESPItemList})
-createToggle("Player_ESP", "Player_ESP", 5)
+createToggle("Twisted_ESP", "Twisted_ESP", 2, {title = "Twisted Filter", table = monsterFilters, list = MonsterList}, {title = "Monster Display", table = displayFilters.Monster, espType = "Monster"})
+createToggle("Machine_ESP", "Machine_ESP", 3, nil, {title = "Machine Display", table = displayFilters.Machine, espType = "Machine"})
+createToggle("Item_ESP", "Item_ESP", 4, {title = "Item Filter", table = itemFilters, list = ESPItemList}, {title = "Item Display", table = displayFilters.Item, espType = "Item"})
+createToggle("Player_ESP", "Player_ESP", 5, nil, {title = "Player Display", table = displayFilters.Player, espType = "Player"})
 createToggle("Stat_HUD", "Stat_HUD", 6)
 createToggle("Instant_Interact", "Instant_Interact", 7)
 createToggle("Auto_Escape", "Auto_Escape", 8)
@@ -1788,41 +1924,27 @@ local function registerDescendant(desc)
 		if isTwisted(desc) then 
 			TrackedEntities.Twisteds[desc] = true 
 		elseif isMachine(desc) then
-			TrackedEntities.Machines[desc] = true
+			registerMachine(desc)
 		end
 	elseif desc:IsA("ProximityPrompt") then
 		TrackedEntities.Prompts[desc] = true
-		
-		if EnvironmentSnapshot.Prompts[desc] == nil then
-			EnvironmentSnapshot.Prompts[desc] = desc.HoldDuration
-		end
-
-		promptConnections[desc] = desc:GetPropertyChangedSignal("Enabled"):Connect(function()
-			if desc.ActionText ~= "Ichor" and desc.ActionText ~= "" then
-				if not desc.Enabled then 
-					removeSingleESP(desc.Parent) 
-				elseif toggleStates.Item_ESP and isItemAllowed(desc.ActionText) then 
-					applyESP(desc.Parent, "Item", desc.ActionText) 
-				end
-			end
-		end)
-		
+		trackPrompt(desc)
 		if toggleStates.Instant_Interact then desc.HoldDuration = 0 end
 		if toggleStates.Item_ESP and desc.ActionText ~= "Ichor" and desc.ActionText ~= "" and desc.Enabled and isItemAllowed(desc.ActionText) then 
 			task.wait(0.1) 
 			applyESP(desc.Parent, "Item", desc.ActionText) 
 		end
 		
-		local pM = desc:FindFirstAncestorWhichIsA("Model")
-		if pM and isMachine(pM) and not TrackedEntities.Machines[pM] then
-			TrackedEntities.Machines[pM] = true
+		local parentModel = desc:FindFirstAncestorWhichIsA("Model")
+		if parentModel and isMachine(parentModel) and not TrackedEntities.Machines[parentModel] then
+			registerMachine(parentModel)
 		end
 	end
 end
 
 table.insert(connections, workspace.DescendantAdded:Connect(function(desc)
 	registerDescendant(desc)
-	if toggleStates.Twisted_ESP and isTwisted(desc) then task.wait(0.15) applyESP(desc, "Monster") end
+	if toggleStates.Twisted_ESP and isTwisted(desc) and isTwistedAllowed(desc) then task.wait(0.15) applyESP(desc, "Monster") end
 	if toggleStates.Machine_ESP and (TrackedEntities.Machines[desc] or isMachine(desc)) then task.wait(0.15) applyESP(desc, "Machine") end
 end))
 
@@ -1939,14 +2061,12 @@ local function executeRadarTick()
 			if angleDiff < 14 or angleDiff > 346 then
 				blip.BackgroundTransparency = 0
 				if str then
-					str.Thickness = 1.6
 					str.Transparency = 0
 				end
 			else
-				blip.BackgroundTransparency = math.clamp(blip.BackgroundTransparency + 0.0088, 0, 0.35)
+				blip.BackgroundTransparency = math.clamp(blip.BackgroundTransparency + 0.04, 0, 0.35)
 				if str then
-					str.Thickness = math.clamp(str.Thickness - 0.012, 1.0, 1.6)
-					str.Transparency = math.clamp(str.Transparency + 0.0088, 0, 0.5)
+					str.Transparency = math.clamp(str.Transparency + 0.04, 0, 0.5)
 				end
 			end
 		end
@@ -1986,7 +2106,7 @@ table.insert(connections, RunService.RenderStepped:Connect(function()
 		scannerPivot.Rotation = (tick() * 150) % 360
 	end
 
-	if tick() - lastRadarTick >= 0.005 then
+	if tick() - lastRadarTick >= 0.03 then
 		lastRadarTick = tick()
 		executeRadarTick()
 	end
