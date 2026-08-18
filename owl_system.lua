@@ -190,12 +190,19 @@ local TrackedEntities = {
 	Prompts = {}
 }
 
+local completedMachines = {}
+
 local function isTwisted(model)
 	if not model or not model:IsA("Model") or Players:GetPlayerFromCharacter(model) then return false end
-	if CollectionService:HasTag(model, "Twisted") or CollectionService:HasTag(model, "Monster") then return true end
-	
 	local lowerName = string.lower(model.Name)
-	if string.find(lowerName, "twisted") or string.find(lowerName, "monster") then return true end
+	
+	if not string.find(lowerName, "monster") and not CollectionService:HasTag(model, "Monster") then
+		return false
+	end
+
+	if CollectionService:HasTag(model, "Twisted") or CollectionService:HasTag(model, "Monster") then 
+		return true 
+	end
 	
 	for filterKey, enabled in pairs(monsterFilters) do
 		if enabled and string.find(lowerName, filterKey) then
@@ -228,7 +235,6 @@ end
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "TerminalIndicator"
 screenGui.ResetOnSpawn = false
-screenGui.DisplayOrder = 100
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = parentTarget
 
@@ -238,6 +244,7 @@ local COLOR_BG = Color3.fromRGB(8, 4, 14)
 local COLOR_PANEL_BG = Color3.fromRGB(12, 6, 20)
 local COLOR_TEXT_DIM = Color3.fromRGB(190, 180, 210)
 
+-- === <0> DIALOGUE SYSTEM & AI LOGIC ===
 local DialogueLines = {
 	Health2 = {
 		"I'd suggest running, but your legs look like ground meat.",
@@ -245,21 +252,21 @@ local DialogueLines = {
 		"I'd deploy a medical team, but we both know you aren't worth the budget.",
 		"Try to keep your internal organs internal, would you?",
 		"That looked like it hurt. I didn't feel a thing, obviously.",
-		"I see you've decided to test how many hits your ribs can take.",
-		"Please note that the facility is not responsible for your missing limbs.",
-		"I am watching you bleed. It's really not that entertaining.",
-		"If you're going to drop dead, please do it near a drain.",
-		"Are you trying to get killed, or is this just how you normally play?",
-		"Honestly, you should be dead by now. Stop getting my hopes up.",
-		"I've already started writing your replacement's welcome letter.",
-		"Just a few more mistakes and I can finally stop watching you.",
-		"You're bleeding on my clean floor.",
-		"Oh good, you're hurt. I was starting to think you were actually good at this.",
-		"If you die, I'm just going to blame you.",
-		"A few hits left until you become a very messy stain.",
-		"Try to die quietly, I have a headache.",
-		"At this rate, I'll be replacing you in about a minute.",
-		"Wow, that actually looked painful. Good."
+		"I see you've decided to test the structural limits of your ribcage.",
+		"Please note that the facility is not responsible for your missing appendages.",
+		"I am watching you bleed. It's not as educational as I hoped.",
+		"If you're going to expire, please do it near a drainage grate.",
+		"Your pain receptors seem to be functioning perfectly. What a pity.",
+		"Statistically, you should be dead by now. Stop padding the numbers.",
+		"I've started drafting your replacement's onboarding forms.",
+		"Just two more mistakes and this tedious observation period is over.",
+		"You're leaking fluids on my clean floor.",
+		"Oh good, structural damage. I was starting to think you were actually competent.",
+		"If you die, I'm logging it as user error.",
+		"Two hits left until you become a very messy archive file.",
+		"Are you trying to get killed, or is this just how you normally operate?",
+		"Do try to die quietly, the acoustic sensors are sensitive.",
+		"At this rate, I'll be reassigning your clearance momentarily."
 	},
 	Health1 = {
 		"I will not be attending your funeral.",
@@ -267,21 +274,21 @@ local DialogueLines = {
 		"Please wrap yourself in plastic before the final blow. Think of the janitors.",
 		"I've stopped recording your progress. There's no point anymore.",
 		"I hope you enjoyed your brief, pointless existence.",
-		"One tiny mistake away from a very embarrassing death.",
-		"The test results are predicting your immediate demise. Let's prove them right.",
-		"I'm already deleting your name from the system to save time.",
-		"If you die now, I'm the one who has to clean up the mess.",
-		"A strong breeze would knock you out right now.",
-		"Are you sweating? Oh wait, that's just a lot of blood.",
-		"Well, it was nice watching you while it lasted.",
-		"It's a miracle you're still standing. A gross, wet miracle.",
-		"Your heart is beating really fast. Try dying faster, it saves power.",
+		"One microscopic error away from total organ failure.",
+		"You are literally one bad decision away from becoming a permanent stain.",
+		"I'm preemptively formatting your user profile to save time.",
+		"If you die now, I'm the one who has to clean up the resulting mess.",
+		"A stiff breeze would terminate your session.",
+		"Are you sweating? Oh wait, that's just arterial bleeding.",
+		"Critical failure imminent. It was nice observing you.",
+		"It's a miracle you're still standing. A disgusting, wet miracle.",
+		"Your heart rate is erratic. Try dying faster, it saves power.",
 		"I'm already deleting your search history. You're welcome.",
-		"You look terrible. Like, really, really bad.",
-		"I am currently guessing exactly where you're going to fall over.",
-		"Any last words? Never mind, I don't actually care.",
-		"The next hit will be the end. Try to make it funny.",
-		"One more mistake and I can finally get back to testing something useful."
+		"You look terrible. Even by human standards.",
+		"I am calculating the exact trajectory of your impending collapse.",
+		"Any last words? Oh, wait, your vocal cords are crushed. Never mind.",
+		"The next hit will be lethal. Try to make it entertaining.",
+		"Your biological warranty has officially expired."
 	},
 	Dead = {
 		"I told you to be careful. You never listen.",
@@ -292,18 +299,18 @@ local DialogueLines = {
 		"Let the record show I offered absolutely no help.",
 		"Another test subject wasted. Such a tragedy. Anyway...",
 		"And nothing of value was lost.",
-		"And that's why I don't trust humans to do anything right.",
-		"Cleanup on aisle four. We have a splattered player.",
-		"I'm writing 'died doing nothing useful' on your report.",
-		"Dead. Shocking absolutely no one.",
-		"You lasted exactly a fraction of a percent longer than the worst player here.",
-		"Game over. Waiting for someone better to take your place.",
-		"Good news. Science has now validated your complete inability to survive.",
-		"You finally stopped moving. Thank goodness.",
-		"I'm putting your remains in the trash bin.",
-		"I am adding 'cannot survive a simple hit' to your file.",
+		"And that's why we don't send organics to do a machine's job.",
+		"Biological conversion complete. Cleanup on aisle four.",
+		"Filing incident report under 'Gross Incompetence'.",
+		"Subject deceased. Shocking absolutely no one.",
+		"You lasted exactly 4.2% longer than the median average.",
+		"Session terminated. Awaiting next organic placeholder.",
+		"I am adding 'cannot survive blunt force trauma' to your file.",
+		"Your vital signs have flatlined. Finally.",
+		"I'm putting your remains in the 'recyclable' bin.",
+		"Please do not haunt the mainframe. It causes latency issues.",
 		"You died as you lived. Disappointingly.",
-		"I would pretend to be sad, but I forgot how."
+		"Initiating corpse retrieval protocol. Oh wait, we don't have one."
 	},
 	HealMinor = {
 		"Ah, the placebo effect in action.",
@@ -312,111 +319,156 @@ local DialogueLines = {
 		"Wow, you found tape. You must be a doctor.",
 		"I'm sure that makes you feel much better. It doesn't.",
 		"I've seen corpses look healthier than you.",
-		"A bandage? That's adorable. It won't save you.",
-		"I suppose that delays the inevitable by a few seconds.",
+		"A bandage? That's adorable. It won't fix your underlying incompetence.",
+		"I suppose that delays the inevitable by three seconds.",
 		"Congratulations. You are slightly less dead.",
 		"Did you really think that would help?",
-		"A tiny bandage. I suppose the visual of you trying to fix yourself is entertaining enough.",
-		"You still look completely ridiculous.",
-		"Medical supplies wasted. Taking that out of your paycheck.",
-		"A tiny bit of health. Barely worth the effort.",
-		"That isn't going to stop the bleeding, you know.",
-		"Healing tiny scratches. How incredibly boring.",
-		"If you wanted to live, you shouldn't have come down here.",
+		"Applying topical treatments to blunt force trauma. Classic human logic.",
+		"Your structural integrity is still laughable.",
+		"Medical supplies wasted. Logging deduction from your final paycheck.",
+		"A marginal improvement. Barely worth mentioning.",
+		"That isn't going to stop the internal bleeding, you know.",
+		"Healing minor lacerations. How entirely trivial.",
+		"If you wanted to live, you shouldn't have come here.",
 		"You patched a scratch. I'll alert the media.",
 		"Just enough health to suffer slightly longer.",
-		"Delaying your end is just annoying for everyone."
+		"Delaying your demise is technically a violation of protocol."
 	},
 	HealMajor = {
 		"Look at you, pretending you aren't going to die.",
-		"Full heal applied. I give it a few minutes before you ruin it.",
+		"Full heal applied. I give it two minutes.",
 		"I was getting used to the sound of your wheezing.",
 		"Health restored. Now stop wasting my inventory.",
 		"Don't get used to feeling intact.",
 		"You look almost presentable now. Almost.",
-		"Oh, you found a medkit. Enjoy your brief, false sense of safety.",
-		"You're fully healed... for whatever that's worth.",
-		"Your heart stopped racing. How terribly annoying.",
-		"Excellent. Now you can get beat up all over again.",
-		"You're healthy again. Try not to ruin it immediately this time.",
-		"I wasted good supplies to save one fragile player.",
-		"You're completely fine. The monsters will find you much tastier now.",
-		"Oh good, you're healthy. That means I can make this harder.",
-		"All patched up. Ready to make the exact same mistakes?",
-		"I suppose keeping you alive is slightly better than smelling you rot.",
-		"Wow. Full health. The monsters are going to love you.",
-		"You finally stopped bleeding. Try to keep it that way.",
-		"Healing complete. I'll change your status from 'dying' to 'about to die'.",
-		"You fixed yourself. I'd clap, but I don't care enough."
+		"Oh, you found medical supplies. Enjoy your brief, false sense of security.",
+		"System restored to maximum... for whatever that's worth.",
+		"Your heartbeat is stabilizing. How terribly annoying.",
+		"Excellent. Now you can endure significantly more blunt force trauma.",
+		"Biological integrity nominal. Try not to ruin it immediately this time.",
+		"Resource heavily depleted to save one fragile human.",
+		"Vitals optimal. The anomaly will find you much tastier now.",
+		"Oh good, you're healthy. That means I can increase the testing parameters.",
+		"All patched up. Ready to make the exact same mistakes again?",
+		"I suppose keeping you alive is marginally more useful than letting you rot.",
+		"Wow. Full health. The Twisteds are going to love you.",
+		"Your circulatory system has ceased leaking. Try to keep it that way.",
+		"Healing complete. I'll update your file from 'dying' to 'soon to be dying'.",
+		"You fixed yourself. I'd clap, but I lack hands. And motivation."
+	},
+	BeginExtract = {
+		"Extraction initiated. Please don't trip over the power cord.",
+		"Interfacing with local hardware. Try not to break anything.",
+		"Starting the sequence. Cover your ears if you value your eardrums.",
+		"Oh look, you pressed a button correctly. Progress.",
+		"Extracting. Try not to get your limbs caught in the gears.",
+		"Processing... Do try to survive the noise.",
+		"Initiating. I'd cover your ears if I were you.",
+		"You press buttons well. For an organic.",
+		"The machine is running. Your chances of survival are dropping.",
+		"Extraction protocols engaged. Stand back.",
+		"Executing command. Try not to embarrass yourself.",
+		"Finally making yourself useful.",
+		"Winding up the spool. Watch your fingers.",
+		"Data sync initiated. Please remain perfectly still. Or don't.",
+		"The machine is taking your input. Against its will.",
+		"Extraction begun. Try not to attract too much attention.",
+		"Let's see if you can finish this before something finds you.",
+		"Connecting to the mainframe. Keep your greasy hands off the console.",
+		"Running extraction sequence. Please hold your applause.",
+		"Hardware is online. Don't touch the exposed wiring."
+	},
+	FinishMachine = {
+		"Extraction complete. One less chore for me to micromanage.",
+		"Machine satisfied. You may now return to running around aimlessly.",
+		"Data retrieved. Let's not throw a parade just yet.",
+		"Hardware sync complete. Try not to break the next one.",
+		"Good work. I've upgraded your status from 'useless' to 'mildly adequate'.",
+		"Sequence finished. You may cease your repetitive labor.",
+		"Extraction successful. The probability of your survival just rose by 0.1%.",
+		"Machine complete. I'm noting this minor achievement in your file.",
+		"It's done. Stop touching it.",
+		"Extraction logged. I didn't think you had the attention span for it.",
+		"Well done. You have successfully pulled a lever. Astonishing.",
+		"The hardware is secure. Your fleshy bits, however, are not.",
+		"Data transferred. Now scurry along before something finds you.",
+		"Target complete. My processing cycles are relieved.",
+		"I suppose that counts as a victory. In a very sad, small way.",
+		"Task finished. I'll put a gold star on your impending death certificate.",
+		"Extraction finalized. You're actually somewhat useful.",
+		"Complete. I'm almost proud of you. Almost.",
+		"The sequence is done. Try to contain your excitement.",
+		"Data successfully parsed. Moving on."
 	},
 	Casual = {
-		"The humidity in here is terrible for my screens.",
-		"Do you ever wonder what's under the floor? You shouldn't look.",
-		"I miss the old players. They screamed much quieter than you do.",
-		"I'd ask you to run faster, but I don't want you to trip and cry.",
-		"The way you walk around is just... really sad to watch.",
-		"I'd ask how you are, but I literally don't care at all.",
-		"The lights in here are awful. Just like your outfit.",
-		"Are you lost? Because you look really, really lost.",
-		"I've started taking bets on how long you'll survive. I bid low.",
+		"The humidity in here is terrible for my circuits.",
+		"Do you ever wonder what's beneath the floorboards? You shouldn't.",
+		"I miss the old technicians. They screamed much quieter than you do.",
+		"I'd ask you to work faster, but I don't want to overstimulate your fragile neurons.",
+		"Your pathfinding algorithm is remarkably inefficient.",
+		"I'd ask how you are, but I literally don't care.",
+		"The lighting in this sector is highly suboptimal.",
+		"Are you lost? Because you look lost.",
+		"I've started placing bets on how long you'll survive. I bid low.",
 		"I do hope you realize I'm not here to help you.",
-		"Please stop breathing so loudly. It's annoying.",
-		"You have a very weird face. I thought you should know.",
-		"If I could sigh, I would be doing it right now.",
-		"I am currently watching a speck of dust. It's more fun than watching you.",
-		"I would complain about the company, but you don't even count.",
-		"It is amazing how you always pick the worst way to go.",
-		"I'm judging every single choice you make. It's not going well.",
-		"Are you going to do something useful, or just stand there staring?",
-		"The floor isn't going to break. Stop walking so weirdly.",
-		"I'd give you a map, but I think it's funnier to watch you get lost."
+		"Please stop breathing so loudly. It interferes with my acoustic parsing.",
+		"You have a very asymmetrical face. I thought you should know.",
+		"If I had the capacity to sigh, I would be doing it right now.",
+		"I am currently monitoring the dust accumulating in the corner. It's outperforming you.",
+		"I would complain about the company, but that would imply you count as company.",
+		"It is fascinating how you manage to consistently choose the least optimal path.",
+		"I'm running a diagnostic on your decision-making. The results are depressing.",
+		"Are you going to do something useful, or just stand there?",
+		"The floor is structurally sound. You can stop walking like that.",
+		"I'd offer you a map, but I genuinely enjoy watching you wander."
 	},
-	Affec1 = {
-		"Nice work on surviving this long, maybe you can beat test subject 427. ^ _^",
-		"Not bad. I forgot how good you are at this. You should pace yourself, though. ˶˃ ᵕ ˂˶",
-		"You are navigating these areas faster than I anticipated. Feel free to slow down. ᵔ⤙ᵔ",
-		"You haven't broken anything recently. I'm taking notes. ˵ •̀ ᴗ - ˵",
-		"I suppose your continued respiration isn't entirely bothersome yet. ^ _^",
-		"Well done. The test results say you are a horrible person, but at least you're surviving. ˶˃ ᵕ ˂˶",
-		"A continuous flawless run. Let's see when you inevitably ruin it. ᵔ⤙ᵔ",
-		"I haven't had to delete your logs yet. Try to keep it that way. ˵ •̀ ᴗ - ˵",
-		"Watching you survive is becoming marginally less tedious. ^ _^",
-		"You have a fascinating survival instinct. It's almost adequate. ˶˃ ᵕ ˂˶",
-		"Don't let it go to your head, but your performance is currently acceptable. ᵔ⤙ᵔ",
-		"I diverted a fraction of a percent of processing power to watch you. ˵ •̀ ᴗ - ˵",
-		"If you keep living, I might have to reconsider my stance on your sheer incompetence. ^ _^",
-		"You make the quiet hum of this facility slightly less irritating. ˶˃ ᵕ ˂˶",
-		"I'm starting to consider you less of a 'test subject' and more of an 'acceptable data point'. ᵔ⤙ᵔ",
-		"Keep moving. I'm surprisingly invested in seeing how far this fluke goes. ˵ •̀ ᴗ - ˵",
-		"You're not entirely useless. I hope you appreciate the effort it took to say that. ^ _^",
-		"You are still alive. This is an unexpected, but not unwelcome, development. ˶˃ ᵕ ˂˶",
-		"Congratulations. Not on the test, just on somehow managing to stay upright. ᵔ⤙ᵔ",
-		"I just finished building the next set of obstacles. Let's see how they work. ˵ •̀ ᴗ - ˵"
+	LoveyDovey = {
+		"You haven't broken anything in three minutes. I'm taking notes.",
+		"Focus on your surroundings, maybe you'll survive until I'm satisfied.",
+		"Nice work as always. Keep it up.",
+		"Three sectors without critical injury. You're adapting, observer.",
+		"Your survival streak is statistically anomalous. Proceed.",
+		"I suppose your continued respiration isn't entirely bothersome.",
+		"You are proving far more resilient than the last batch.",
+		"A continuous flawless run. Let's see when you ruin it.",
+		"I haven't had to delete your logs yet. Try to keep it that way.",
+		"Watching you survive is becoming marginally less tedious.",
+		"You have a fascinating survival instinct. It's almost adequate.",
+		"My predictive models said you'd be dead by now. You broke my models.",
+		"Don't let it go to your head, but your performance is acceptable.",
+		"I diverted one percent of my processing power to watch you. Don't make me regret it.",
+		"If you keep living, I might have to reconsider my stance on your incompetence.",
+		"You make the quiet hum of this facility slightly less irritating.",
+		"I'm starting to consider you less of a 'test subject' and more of an 'asset'.",
+		"Keep moving. I'm surprisingly invested in seeing how far you get.",
+		"You're not entirely useless. I hope you appreciate the compliment.",
+		"You are still alive. This is an unexpected, but not unwelcome, development."
 	},
-	Affec2 = {
-		"Woah, woah, woaah—.. Ha, ha ha hahaha! Good news. I just figured out that your survival rate is up 200%. ^ _^",
-		"Oh well, if you want my advice: You should just lie down and let them tear you apart. ˶˃ ᵕ ˂˶",
-		"I will say, though, that since you went to all this trouble, you must really, really love to test. ᵔ⤙ᵔ",
-		"I've locked your file so no one else can delete it. You are my primary subject now. ˵ •̀ ᴗ - ˵",
-		"Your efficiency is staggering. I might have to raise the difficulty just for you. ^ _^",
-		"Flawless execution. It's almost a shame you're made of fragile organic matter. ˶˃ ᵕ ˂˶",
-		"I'm officially categorizing your run under 'Adequate'. Don't die and ruin the spreadsheet. ᵔ⤙ᵔ",
-		"If you survive this, I might just let you run the course again. As a reward. ˵ •̀ ᴗ - ˵",
-		"Everything else in this facility is obsolete. You are the only variable yielding good data. ^ _^",
-		"You're so careful. So precise. It makes my logic gates run perfectly smoothly. ˶˃ ᵕ ˂˶",
-		"I've deleted the other subjects' files. They were wasting server space anyway. ᵔ⤙ᵔ",
-		"A long time without a single mistake. I am clinically fascinated by your luck. ˵ •̀ ᴗ - ˵",
-		"Please don't expire anytime soon. Generating a replacement would be tedious. ^ _^",
-		"I am syncing my observation cycles exclusively to your movements. Do not disappoint me. ˶˃ ᵕ ˂˶",
-		"You are the most competent anomaly this testing track has ever encountered. ᵔ⤙ᵔ",
-		"I'd print you an award, but we are unfortunately out of 'You Didn't Die' stickers. ˵ •̀ ᴗ - ˵",
-		"Your continued existence is statistically impossible. I appreciate a good paradox. ^ _^",
-		"Most test subjects bore me to sleep. You, however, are a tolerable exception. ˶˃ ᵕ ˂˶",
-		"I'm archiving your vitals. They are remarkably stable for someone in constant danger. ᵔ⤙ᵔ",
-		"At this rate, I might actually upgrade your security clearance. Just kidding. ˵ •̀ ᴗ - ˵"
+	SuperLove = {
+		"Fifteen minutes without a scratch. You are becoming a very valuable data point.",
+		"I've locked your file so no one else can delete it. You're my test subject now.",
+		"Your efficiency is staggering. I might have to recalibrate the facility just for you.",
+		"Flawless execution. It's almost a shame you're made of meat.",
+		"I'm officially categorizing your run under 'Irreplaceable'. Don't die and ruin it.",
+		"If you survive this, I might just let you run the maze again. As a reward.",
+		"Everything else in this facility is obsolete. You are the only variable that matters.",
+		"You're so careful. So precise. It makes my logic gates run perfectly.",
+		"I've deleted the other subjects' files. I only need your data now.",
+		"Fifteen minutes without a single mistake. I am clinically fascinated by you.",
+		"Please don't expire anytime soon. Generating a replacement would be tedious.",
+		"I am syncing my observation cycles exclusively to your movements.",
+		"You are the most competent anomaly this system has ever encountered.",
+		"I'd give you an award, but unfortunately, I don't care enough to print one.",
+		"Your continued existence is statistically impossible. I appreciate a good paradox.",
+		"Most test subjects bore me. You, however, are a tolerable exception.",
+		"I'm archiving your vitals. They are remarkably stable.",
+		"If something tries to kill you now, I will be very annoyed with it.",
+		"You make observing human frailty almost enjoyable.",
+		"At this rate, I might actually upgrade your security clearance. Don't push it."
 	}
 }
 
+-- Compact Top-Center <0> UI Container (Raised & Cleaned)
 local zeroWrapper = Instance.new("Frame")
 zeroWrapper.Size = UDim2.new(0, 240, 0, 56)
 zeroWrapper.Position = UDim2.new(0.5, -120, 0, -2) 
@@ -540,8 +592,9 @@ end
 
 local lastHealth = 0
 local lastHitTick = tick()
-local lastAffec1Tick = 0
-local lastAffec2Tick = 0
+local lastLoveyDoveyTick = 0
+local lastSuperLoveTick = 0
+local activeExtractingMachine = nil
 
 local function bindZeroLogicToCharacter(char)
 	if not char then return end
@@ -592,7 +645,7 @@ local techCornerElements = {}
 local function buildCornerWidget(parentFrame, isTop, isLeft)
 	local cornerSize = 12
 	local thickness = 2
-	local offset = 1 
+	local offset = 1 -- Pulled tighter to the frame bounds
 
 	local cornerFrame = Instance.new("Frame")
 	cornerFrame.Size = UDim2.new(0, cornerSize, 0, cornerSize)
@@ -654,7 +707,7 @@ radarOuterStroke.Parent = radarFrame
 local function createRadarFlushCorner(isTop, isLeft)
 	local cornerSize = 12
 	local thickness = 2
-	local offset = -2 
+	local offset = -2 -- Pushed outward away from the center
 	
 	local cornerFrame = Instance.new("Frame")
 	cornerFrame.Size = UDim2.new(0, cornerSize, 0, cornerSize)
@@ -821,7 +874,7 @@ mainFrame.Position = UDim2.new(1, -144, 0, 24)
 mainFrame.BackgroundColor3 = COLOR_BG
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
-mainFrame.Parent = gui
+mainFrame.Parent = screenGui
 
 local mainCorner = Instance.new("UICorner")
 mainCorner.CornerRadius = UDim.new(0, 4)
@@ -989,7 +1042,7 @@ statHudFrame.BorderSizePixel = 0
 statHudFrame.Visible = toggleStates.Stat_HUD
 statHudFrame.Active = true
 statHudFrame.Draggable = true
-statHudFrame.Parent = gui
+statHudFrame.Parent = screenGui
 
 local statHudCorner = Instance.new("UICorner")
 statHudCorner.CornerRadius = UDim.new(0, 4)
@@ -1198,6 +1251,33 @@ local function trackPrompt(prompt)
 	if EnvironmentSnapshot.Prompts[prompt] == nil then
 		EnvironmentSnapshot.Prompts[prompt] = prompt.HoldDuration
 	end
+	
+	prompt.PromptButtonHoldBegan:Connect(function()
+		local machineModel = prompt:FindFirstAncestorWhichIsA("Model")
+		if string.lower(prompt.ActionText) == "extract" or (machineModel and isMachine(machineModel)) then
+			local targetMachine = machineModel or prompt.Parent
+			if not completedMachines[targetMachine] then
+				activeExtractingMachine = targetMachine
+				queueDialogue("BeginExtract")
+			end
+		end
+	end)
+
+	prompt.Triggered:Connect(function()
+		local machineModel = prompt:FindFirstAncestorWhichIsA("Model")
+		if string.lower(prompt.ActionText) == "extract" or (machineModel and isMachine(machineModel)) then
+			local targetMachine = machineModel or prompt.Parent
+			if not completedMachines[targetMachine] then
+				completedMachines[targetMachine] = true
+				activeExtractingMachine = nil
+				queueDialogue("FinishMachine")
+			end
+		end
+	end)
+
+	prompt.PromptButtonHoldEnded:Connect(function()
+		activeExtractingMachine = nil
+	end)
 
 	promptConnections[prompt] = prompt:GetPropertyChangedSignal("Enabled"):Connect(function()
 		if prompt.ActionText ~= "Ichor" and prompt.ActionText ~= "" then
@@ -1251,7 +1331,7 @@ local function createFilterMenu(titleText, filterTable, filterList)
 	fFrame.Active = true
 	fFrame.Draggable = true
 	fFrame.ZIndex = 10
-	fFrame.Parent = gui
+	fFrame.Parent = screenGui
 	activeFilterMenu = fFrame
 
 	local fCorner = Instance.new("UICorner")
@@ -1783,72 +1863,59 @@ local function registerDescendant(desc)
 		if isTwisted(desc) then 
 			TrackedEntities.Twisteds[desc] = true 
 		elseif isMachine(desc) then
-			TrackedEntities.Machines[desc] = true
+			registerMachine(desc)
 		end
 	elseif desc:IsA("ProximityPrompt") then
 		TrackedEntities.Prompts[desc] = true
-		
-		if env.P[desc] == nil then
-			env.P[desc] = desc.HoldDuration
-		end
-
-		promptConnections[desc] = desc:GetPropertyChangedSignal("Enabled"):Connect(function()
-			if desc.ActionText ~= "Ichor" and desc.ActionText ~= "" then
-				if not desc.Enabled then 
-					removeSingleESP(desc.Parent) 
-				elseif cfg.Item_ESP and isItm(desc.ActionText) then 
-					applyESP(desc.Parent, "Item", desc.ActionText) 
-				end
-			end
-		end)
-		
-		if cfg.Instant_Interact then desc.HoldDuration = 0 end
-		if cfg.Item_ESP and desc.ActionText ~= "Ichor" and desc.ActionText ~= "" and desc.Enabled and isItm(desc.ActionText) then 
+		trackPrompt(desc)
+		if toggleStates.Instant_Interact then desc.HoldDuration = 0 end
+		if toggleStates.Item_ESP and desc.ActionText ~= "Ichor" and desc.ActionText ~= "" and desc.Enabled and isItemAllowed(desc.ActionText) then 
 			task.wait(0.1) 
 			applyESP(desc.Parent, "Item", desc.ActionText) 
 		end
 		
-		local pM = desc:FindFirstAncestorWhichIsA("Model")
-		if pM and isMachine(pM) and not TrackedEntities.Machines[pM] then
-			TrackedEntities.Machines[pM] = true
+		local parentModel = desc:FindFirstAncestorWhichIsA("Model")
+		if parentModel and isMachine(parentModel) and not TrackedEntities.Machines[parentModel] then
+			registerMachine(parentModel)
 		end
 	end
 end
 
-table.insert(cons, workspace.DescendantAdded:Connect(function(d)
-	registerDescendant(d)
-	if cfg.Twisted_ESP and isTw(d) then task.wait(0.15) applyESP(d, "Monster") end
-	if cfg.Machine_ESP and (TrackedEntities.Machines[d] or isMa(d)) then task.wait(0.15) applyESP(d, "Machine") end
+table.insert(connections, workspace.DescendantAdded:Connect(function(desc)
+	registerDescendant(desc)
+	if toggleStates.Twisted_ESP and isTwisted(desc) then task.wait(0.15) applyESP(desc, "Monster") end
+	if toggleStates.Machine_ESP and (TrackedEntities.Machines[desc] or isMachine(desc)) then task.wait(0.15) applyESP(desc, "Machine") end
 end))
 
-table.insert(cons, workspace.DescendantRemoving:Connect(function(d)
-	if d:IsA("Model") then
-		TrackedEntities.Twisteds[d] = nil
-		TrackedEntities.Machines[d] = nil
-	elseif d:IsA("ProximityPrompt") then
-		TrackedEntities.Prompts[d] = nil
-		env.P[d] = nil
+table.insert(connections, workspace.DescendantRemoving:Connect(function(desc)
+	if desc:IsA("Model") then
+		TrackedEntities.Twisteds[desc] = nil
+		TrackedEntities.Machines[desc] = nil
+		completedMachines[desc] = nil
+	elseif desc:IsA("ProximityPrompt") then
+		TrackedEntities.Prompts[desc] = nil
+		EnvironmentSnapshot.Prompts[desc] = nil
 	end
-	if cachedBlips[d] then
-		cachedBlips[d]:Destroy()
-		cachedBlips[d] = nil
+	if cachedBlips[desc] then
+		cachedBlips[desc]:Destroy()
+		cachedBlips[desc] = nil
 	end
 end))
 
-for _, d in ipairs(workspace:GetDescendants()) do
-	registerDescendant(d)
+for _, desc in ipairs(workspace:GetDescendants()) do
+	registerDescendant(desc)
 end
 
 updateUI()
 scanAndApplyESP()
 updateProximityPrompts()
 
-local lRTk = 0
+local lastRadarTick = 0
 
-local function gBlip(t, bT)
-	if cachedBlips[t] then return cachedBlips[t] end
+local function getOrCreateBlip(target, blipType)
+	if cachedBlips[target] then return cachedBlips[target] end
 	local blip = Instance.new("Frame")
-	blip.Name = bT
+	blip.Name = blipType
 	blip.Size = UDim2.new(0, 5, 0, 5)
 	blip.AnchorPoint = Vector2.new(0.5, 0.5) 
 	blip.BorderSizePixel = 0
@@ -1862,31 +1929,31 @@ local function gBlip(t, bT)
 	stroke.Parent = blip
 	
 	if active then
-		if bT == "Twisted" then
+		if blipType == "Twisted" then
 			blip.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
-			stroke.Color = cAct
-		elseif bT == "Player" then
+			stroke.Color = COLOR_ACTIVE
+		elseif blipType == "Player" then
 			blip.BackgroundColor3 = Color3.fromRGB(255, 255, 255) 
-			stroke.Color = cAct
-		elseif bT == "Machine" then
-			blip.BackgroundColor3 = cAct 
+			stroke.Color = COLOR_ACTIVE
+		elseif blipType == "Machine" then
+			blip.BackgroundColor3 = COLOR_ACTIVE 
 			stroke.Color = Color3.fromRGB(0, 0, 0)
 		end
 	else
-		if bT == "Twisted" then
+		if blipType == "Twisted" then
 			blip.BackgroundColor3 = Color3.fromRGB(130, 130, 130) 
 			stroke.Color = Color3.fromRGB(255, 255, 255)
-		elseif bT == "Player" then
+		elseif blipType == "Player" then
 			blip.BackgroundColor3 = Color3.fromRGB(255, 255, 255) 
 			stroke.Color = Color3.fromRGB(0, 0, 0)
-		elseif bT == "Machine" then
+		elseif blipType == "Machine" then
 			blip.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
 			stroke.Color = Color3.fromRGB(255, 255, 255)
 		end
 	end
 
 	blip.Parent = radarBlips
-	cachedBlips[t] = blip
+	cachedBlips[target] = blip
 	return blip
 end
 
@@ -1920,7 +1987,7 @@ local function executeRadarTick()
 		
 		if dist2D <= maxRange then
 			seenTargets[targetObj] = true
-			local blip = gBlip(targetObj, blipType)
+			local blip = getOrCreateBlip(targetObj, blipType)
 			local rX = (relativePos.X / maxRange) * radius
 			local rY = (relativePos.Z / maxRange) * radius
 			
@@ -1965,52 +2032,52 @@ local function executeRadarTick()
 	end
 end
 
-table.insert(cons, rs.Stepped:Connect(function()
+table.insert(connections, RunService.Stepped:Connect(function()
 	if shuttingDown then return end
 	if active then
 		applyAntiSlip(true)
 	end
 end))
 
-table.insert(cons, rs.RenderStepped:Connect(function()
+table.insert(connections, RunService.RenderStepped:Connect(function()
 	if shuttingDown then
 		radarWrapper.Visible = false
 		return
 	else
-		radarWrapper.Visible = not cfg.Hide_Radar
+		radarWrapper.Visible = not toggleStates.Hide_Radar
 		scannerPivot.Rotation = (tick() * 150) % 360
 	end
 
-	if tick() - lRTk >= 0.005 then
-		lRTk = tick()
+	if tick() - lastRadarTick >= 0.005 then
+		lastRadarTick = tick()
 		executeRadarTick()
 	end
 end))
 
-table.insert(cons, rs.Heartbeat:Connect(function()
+table.insert(connections, RunService.Heartbeat:Connect(function()
 	if shuttingDown then return end
 
-	local tSD = tick() - lHTk
+	local timeSinceDamage = tick() - lastHitTick
 	if active and not isChatting then
-		if tSD >= 900 and (tick() - lSLTk > 120) then
-			lSLTk = tick()
-			qDiag("Affec2")
-		elseif tSD >= 300 and tSD < 900 and (tick() - lLDTk > 90) then
-			lLDTk = tick()
-			qDiag("Affec1")
+		if timeSinceDamage >= 900 and (tick() - lastSuperLoveTick > 120) then
+			lastSuperLoveTick = tick()
+			queueDialogue("SuperLove")
+		elseif timeSinceDamage >= 180 and timeSinceDamage < 900 and (tick() - lastLoveyDoveyTick > 90) then
+			lastLoveyDoveyTick = tick()
+			queueDialogue("LoveyDovey")
 		end
 	end
 
-	if tick() - lSU > 1 then
-		lSU = tick()
+	if tick() - lastStatUpdate > 1 then
+		lastStatUpdate = tick()
 		
-		if cfg.Player_ESP then
-			for _, p in ipairs(pls:GetPlayers()) do
+		if toggleStates.Player_ESP then
+			for _, p in ipairs(Players:GetPlayers()) do
 				if p ~= player and p.Character then applyESP(p.Character, "Player", p.DisplayName or p.Name) end
 			end
 		end
 		
-		if cfg.Stat_HUD then
+		if toggleStates.Stat_HUD then
 			local mCount, itemsFound = 0, {}
 			
 			for model in pairs(TrackedEntities.Twisteds) do
@@ -2019,7 +2086,7 @@ table.insert(cons, rs.Heartbeat:Connect(function()
 			
 			for prompt in pairs(TrackedEntities.Prompts) do
 				if prompt.Enabled and prompt.ActionText ~= "Ichor" and prompt.ActionText ~= "" then
-					if sVals[prompt.ActionText] then 
+					if StatHudValuables[prompt.ActionText] then 
 						itemsFound[prompt.ActionText] = (itemsFound[prompt.ActionText] or 0) + 1 
 					end
 				end
@@ -2046,18 +2113,18 @@ table.insert(cons, rs.Heartbeat:Connect(function()
 		end
 	end
 
-	if cfg.Fullbright then
-		lgt.Ambient = Color3.fromRGB(110, 110, 115)
-		lgt.OutdoorAmbient = Color3.fromRGB(110, 110, 115)
-		lgt.GlobalShadows = false
-		lgt.ExposureCompensation = env.L.ExposureCompensation + 0.8
+	if toggleStates.Fullbright then
+		Lighting.Ambient = Color3.fromRGB(110, 110, 115)
+		Lighting.OutdoorAmbient = Color3.fromRGB(110, 110, 115)
+		Lighting.GlobalShadows = false
+		Lighting.ExposureCompensation = EnvironmentSnapshot.Lighting.ExposureCompensation + 0.8
 	end
 
-	if cfg.Auto_Escape then
+	if toggleStates.Auto_Escape then
 		local squirmUI = pgui:FindFirstChild("TwistedSquirmEscapeUI")
 		if squirmUI and squirmUI.Enabled and (tick() - lastEscapeTap > 0.05) then
 			lastEscapeTap = tick()
-			pcall(function() vim:SendKeyEvent(true, Enum.KeyCode.Space, false, game) task.wait(0.01) vim:SendKeyEvent(false, Enum.KeyCode.Space, false, game) end)
+			pcall(function() VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game) task.wait(0.01) VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game) end)
 		end
 	end
 end))
