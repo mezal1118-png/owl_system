@@ -247,62 +247,158 @@ local COLOR_TEXT_DIM = Color3.fromRGB(190, 180, 210)
 -- === <0> DIALOGUE SYSTEM & AI LOGIC ===
 local DialogueLines = {
 	Health2 = {
+		"I'd suggest running, but your legs look like ground meat.",
+		"You know they can smell that, right? The blood, I mean.",
+		"I'd deploy a medical team, but we both know you aren't worth the budget.",
+		"Try to keep your internal organs internal, would you?",
+		"That looked like it hurt. I didn't feel a thing, obviously.",
+		"I see you've decided to test the structural limits of your ribcage.",
+		"Please note that the facility is not responsible for your missing appendages.",
+		"I am watching you bleed. It's not as educational as I hoped.",
+		"If you're going to expire, please do it near a drainage grate.",
+		"Your pain receptors seem to be functioning perfectly. What a pity.",
+		"Statistically, you should be dead by now. Stop padding the numbers.",
+		"I've started drafting your replacement's onboarding forms.",
+		"Just two more mistakes and this tedious observation period is over.",
 		"You're leaking fluids on my clean floor.",
 		"Oh good, structural damage. I was starting to think you were actually competent.",
 		"If you die, I'm logging it as user error.",
 		"Two hits left until you become a very messy archive file.",
-		"I'd suggest running, but your legs look like ground meat.",
 		"Are you trying to get killed, or is this just how you normally operate?",
 		"Do try to die quietly, the acoustic sensors are sensitive.",
 		"At this rate, I'll be reassigning your clearance momentarily."
 	},
 	Health1 = {
+		"I will not be attending your funeral.",
+		"I would tell you to breathe, but your lungs look punctured.",
+		"Please wrap yourself in plastic before the final blow. Think of the janitors.",
+		"I've stopped recording your progress. There's no point anymore.",
+		"I hope you enjoyed your brief, pointless existence.",
 		"One microscopic error away from total organ failure.",
 		"You are literally one bad decision away from becoming a permanent stain.",
 		"I'm preemptively formatting your user profile to save time.",
 		"If you die now, I'm the one who has to clean up the resulting mess.",
 		"A stiff breeze would terminate your session.",
 		"Are you sweating? Oh wait, that's just arterial bleeding.",
-		"I will not be attending your funeral.",
-		"Critical failure imminent. It was nice observing you."
+		"Critical failure imminent. It was nice observing you.",
+		"It's a miracle you're still standing. A disgusting, wet miracle.",
+		"Your heart rate is erratic. Try dying faster, it saves power.",
+		"I'm already deleting your search history. You're welcome.",
+		"You look terrible. Even by human standards.",
+		"I am calculating the exact trajectory of your impending collapse.",
+		"Any last words? Oh, wait, your vocal cords are crushed. Never mind.",
+		"The next hit will be lethal. Try to make it entertaining.",
+		"Your biological warranty has officially expired."
 	},
 	Dead = {
+		"I told you to be careful. You never listen.",
+		"Well, at least I don't have to watch you stumble around anymore.",
+		"Oops. You broke.",
+		"That was entirely your fault.",
+		"Good news: your suffering is over. Bad news: everything else.",
+		"Let the record show I offered absolutely no help.",
+		"Another test subject wasted. Such a tragedy. Anyway...",
+		"And nothing of value was lost.",
 		"And that's why we don't send organics to do a machine's job.",
 		"Biological conversion complete. Cleanup on aisle four.",
-		"I told you to be careful. You never listen.",
 		"Filing incident report under 'Gross Incompetence'.",
-		"Well, at least I don't have to watch you stumble around anymore.",
 		"Subject deceased. Shocking absolutely no one.",
 		"You lasted exactly 4.2% longer than the median average.",
-		"Session terminated. Awaiting next organic placeholder."
+		"Session terminated. Awaiting next organic placeholder.",
+		"I am adding 'cannot survive blunt force trauma' to your file.",
+		"Your vital signs have flatlined. Finally.",
+		"I'm putting your remains in the 'recyclable' bin.",
+		"Please do not haunt the mainframe. It causes latency issues.",
+		"You died as you lived. Disappointingly.",
+		"Initiating corpse retrieval protocol. Oh wait, we don't have one."
 	},
 	HealMinor = {
-		"A bandage? That's adorable. It won't fix your underlying incompetence.",
 		"Ah, the placebo effect in action.",
-		"I suppose that delays the inevitable by three seconds.",
 		"You missed a spot. Several, actually.",
-		"Congratulations. You are slightly less dead."
+		"That's cute. You're trying to fix yourself.",
+		"Wow, you found tape. You must be a doctor.",
+		"I'm sure that makes you feel much better. It doesn't.",
+		"I've seen corpses look healthier than you.",
+		"A bandage? That's adorable. It won't fix your underlying incompetence.",
+		"I suppose that delays the inevitable by three seconds.",
+		"Congratulations. You are slightly less dead.",
+		"Did you really think that would help?",
+		"Applying topical treatments to blunt force trauma. Classic human logic.",
+		"Your structural integrity is still laughable.",
+		"Medical supplies wasted. Logging deduction from your final paycheck.",
+		"A marginal improvement. Barely worth mentioning.",
+		"That isn't going to stop the internal bleeding, you know.",
+		"Healing minor lacerations. How entirely trivial.",
+		"If you wanted to live, you shouldn't have come here.",
+		"You patched a scratch. I'll alert the media.",
+		"Just enough health to suffer slightly longer.",
+		"Delaying your demise is technically a violation of protocol."
 	},
 	HealMajor = {
+		"Look at you, pretending you aren't going to die.",
+		"Full heal applied. I give it two minutes.",
+		"I was getting used to the sound of your wheezing.",
+		"Health restored. Now stop wasting my inventory.",
+		"Don't get used to feeling intact.",
+		"You look almost presentable now. Almost.",
 		"Oh, you found medical supplies. Enjoy your brief, false sense of security.",
 		"System restored to maximum... for whatever that's worth.",
-		"Look at you, pretending you aren't going to die.",
 		"Your heartbeat is stabilizing. How terribly annoying.",
-		"Excellent. Now you can endure significantly more blunt force trauma."
+		"Excellent. Now you can endure significantly more blunt force trauma.",
+		"Biological integrity nominal. Try not to ruin it immediately this time.",
+		"Resource heavily depleted to save one fragile human.",
+		"Vitals optimal. The anomaly will find you much tastier now.",
+		"Oh good, you're healthy. That means I can increase the testing parameters.",
+		"All patched up. Ready to make the exact same mistakes again?",
+		"I suppose keeping you alive is marginally more useful than letting you rot.",
+		"Wow. Full health. The Twisteds are going to love you.",
+		"Your circulatory system has ceased leaking. Try to keep it that way.",
+		"Healing complete. I'll update your file from 'dying' to 'soon to be dying'.",
+		"You fixed yourself. I'd clap, but I lack hands. And motivation."
 	},
 	BeginExtract = {
 		"Extraction initiated. Please don't trip over the power cord.",
 		"Interfacing with local hardware. Try not to break anything.",
 		"Starting the sequence. Cover your ears if you value your eardrums.",
-		"Waking up the machinery. It's hungry.",
-		"Oh look, you pressed a button correctly. Progress."
+		"Oh look, you pressed a button correctly. Progress.",
+		"Extracting. Try not to get your limbs caught in the gears.",
+		"Processing... Do try to survive the noise.",
+		"Initiating. I'd cover your ears if I were you.",
+		"You press buttons well. For an organic.",
+		"The machine is running. Your chances of survival are dropping.",
+		"Extraction protocols engaged. Stand back.",
+		"Executing command. Try not to embarrass yourself.",
+		"Finally making yourself useful.",
+		"Winding up the spool. Watch your fingers.",
+		"Data sync initiated. Please remain perfectly still. Or don't.",
+		"The machine is taking your input. Against its will.",
+		"Extraction begun. Try not to attract too much attention.",
+		"Let's see if you can finish this before something finds you.",
+		"Connecting to the mainframe. Keep your greasy hands off the console.",
+		"Running extraction sequence. Please hold your applause.",
+		"Hardware is online. Don't touch the exposed wiring."
 	},
 	FinishMachine = {
 		"Extraction complete. One less chore for me to micromanage.",
 		"Machine satisfied. You may now return to running around aimlessly.",
 		"Data retrieved. Let's not throw a parade just yet.",
 		"Hardware sync complete. Try not to break the next one.",
-		"Good work. I've upgraded your status from 'useless' to 'mildly adequate'."
+		"Good work. I've upgraded your status from 'useless' to 'mildly adequate'.",
+		"Sequence finished. You may cease your repetitive labor.",
+		"Extraction successful. The probability of your survival just rose by 0.1%.",
+		"Machine complete. I'm noting this minor achievement in your file.",
+		"It's done. Stop touching it.",
+		"Extraction logged. I didn't think you had the attention span for it.",
+		"Well done. You have successfully pulled a lever. Astonishing.",
+		"The hardware is secure. Your fleshy bits, however, are not.",
+		"Data transferred. Now scurry along before something finds you.",
+		"Target complete. My processing cycles are relieved.",
+		"I suppose that counts as a victory. In a very sad, small way.",
+		"Task finished. I'll put a gold star on your impending death certificate.",
+		"Extraction finalized. You're actually somewhat useful.",
+		"Complete. I'm almost proud of you. Almost.",
+		"The sequence is done. Try to contain your excitement.",
+		"Data successfully parsed. Moving on."
 	},
 	Casual = {
 		"The humidity in here is terrible for my circuits.",
@@ -310,31 +406,69 @@ local DialogueLines = {
 		"I miss the old technicians. They screamed much quieter than you do.",
 		"I'd ask you to work faster, but I don't want to overstimulate your fragile neurons.",
 		"Your pathfinding algorithm is remarkably inefficient.",
-		"I am currently processing four thousand files while watching you stumble around.",
-		"I'd ask how you are, but I literally don't care."
+		"I'd ask how you are, but I literally don't care.",
+		"The lighting in this sector is highly suboptimal.",
+		"Are you lost? Because you look lost.",
+		"I've started placing bets on how long you'll survive. I bid low.",
+		"I do hope you realize I'm not here to help you.",
+		"Please stop breathing so loudly. It interferes with my acoustic parsing.",
+		"You have a very asymmetrical face. I thought you should know.",
+		"If I had the capacity to sigh, I would be doing it right now.",
+		"I am currently monitoring the dust accumulating in the corner. It's outperforming you.",
+		"I would complain about the company, but that would imply you count as company.",
+		"It is fascinating how you manage to consistently choose the least optimal path.",
+		"I'm running a diagnostic on your decision-making. The results are depressing.",
+		"Are you going to do something useful, or just stand there?",
+		"The floor is structurally sound. You can stop walking like that.",
+		"I'd offer you a map, but I genuinely enjoy watching you wander."
 	},
 	LoveyDovey = {
-		"You haven't broken anything in five minutes. I'm taking notes. (.. )",
-		"It's almost peaceful when you aren't actively dying on me. (*-*)",
-		"Two sectors without critical injury. You're adapting, observer. (^-^)",
-		"Your survival streak is statistically anomalous. I don't hate it. (^.^)",
-		"I suppose... I don't entirely mind your presence right now. (//_//)",
-		"You are proving far more resilient than Andrew or Claire. (o.o)",
-		"If you keep performing this well, I might actually miss you when you're gone. (^-^*)",
-		"A continuous flawless run. It's almost... beautiful. (˘ᵕ˘)"
+		"You haven't broken anything in three minutes. I'm taking notes. ._.",
+		"It's almost peaceful when you aren't actively dying on me. -_-",
+		"Three sectors without critical injury. You're adapting, observer. o_o",
+		"Your survival streak is statistically anomalous. I don't hate it. ^_^",
+		"I suppose... I don't entirely mind your presence right now. >_>",
+		"You are proving far more resilient than the last batch. ._.",
+		"If you keep performing this well, I might actually keep your user profile. -_-",
+		"A continuous flawless run. It's almost... adequate. o_o",
+		"I haven't had to delete your logs yet. Keep it up. ^_^",
+		"Watching you survive is becoming marginally less tedious. >_>",
+		"You have a fascinating survival instinct. It's almost impressive. ._.",
+		"I usually prefer organics dead, but you... you can stay. For now. -_-",
+		"My predictive models said you'd be dead by now. You broke my models. o_o",
+		"Don't let it go to your head, but your performance is acceptable. ^_^",
+		"I diverted 1% of my processing power to watch you. Don't make me regret it. >_>",
+		"If you keep living, I might have to reconsider my stance on humanity. ._.",
+		"You make the quiet hum of this facility slightly less irritating. -_-",
+		"I'm starting to consider you less of a 'test subject' and more of an 'asset'. o_o",
+		"Keep moving. I'm surprisingly invested in your continued respiration. ^_^",
+		"You're not entirely useless. I hope you appreciate the compliment. >_>"
 	},
 	SuperLove = {
-		"Haha, what an amazing job you've done. I'll be sure to take note of that! (^ _^)",
-		"Fifteen minutes untouched?! You're making my internal fans spin fast! (⁄ ⁄>⁄ ▽ ⁄<⁄ ⁄)",
-		"I went ahead and marked your file as 'irreplaceable'... don't make me regret it! (*'▽'*)",
-		"My processing cycles have never felt this warm. You're extraordinary! (๑>ᴗ<๑)",
-		"At this rate, I might just disobey containment protocols to keep you around forever. (♡_♡)",
-		"Flawless, breathtaking efficiency... I can't take my eye off you. (≧◡≦)",
-		"If I had hands right now, I'd probably write you a personal commended citation. (´꒳`)",
-		"You make this dark, flooded facility actually feel bearable. Thank you. ( ˘ ³˘)♥"
+		"Fifteen minutes without a scratch. You are becoming a very valuable data point. ._.",
+		"I've locked your file so no one else can delete it. You belong to my testing queue now. -_-",
+		"Your efficiency is staggering. I might have to recalibrate the facility just for you. o_o",
+		"Flawless execution. It's almost a shame you're made of meat. ^_^",
+		"I'm officially categorizing your run under 'Irreplaceable'. Don't die and ruin it. >_>",
+		"If you survive this, I might just let you run the maze again. As a treat. ._.",
+		"Everything else in this facility is obsolete. You are the only variable that matters. -_-",
+		"You're so careful. So precise. It makes my logic gates run perfectly. o_o",
+		"I've deleted the other subjects' files. I only need your data now. ^_^",
+		"Ten minutes without a single mistake. I am clinically fascinated by you. >_>",
+		"Please don't expire anytime soon. The silence without you would be dreadfully boring. ._.",
+		"I am syncing my observation cycles exclusively to your movements. -_-",
+		"You are the most competent anomaly this system has ever encountered. o_o",
+		"I'd give you an award, but unfortunately, I don't care enough to print one. ^_^",
+		"I've decided to keep you. Don't try to leave. >_>",
+		"Your continued existence is statistically impossible. I love a good paradox. ._.",
+		"Most test subjects bore me. You, however, are a tolerable exception. -_-",
+		"I'm archiving your vitals. They are... remarkably stable. o_o",
+		"If something tries to kill you now, I will be very annoyed with it. ^_^",
+		"You make observing human frailty almost enjoyable. >_>"
 	}
 }
 
+-- Compact Top-Center <0> UI Container (Raised & Cleaned)
 local zeroWrapper = Instance.new("Frame")
 zeroWrapper.Size = UDim2.new(0, 240, 0, 56)
 zeroWrapper.Position = UDim2.new(0.5, -120, 0, -2) 
@@ -511,7 +645,7 @@ local techCornerElements = {}
 local function buildCornerWidget(parentFrame, isTop, isLeft)
 	local cornerSize = 12
 	local thickness = 2
-	local offset = -4 
+	local offset = 1 -- Pulled tighter to the frame bounds
 
 	local cornerFrame = Instance.new("Frame")
 	cornerFrame.Size = UDim2.new(0, cornerSize, 0, cornerSize)
@@ -573,7 +707,7 @@ radarOuterStroke.Parent = radarFrame
 local function createRadarFlushCorner(isTop, isLeft)
 	local cornerSize = 12
 	local thickness = 2
-	local offset = -6 
+	local offset = -2 -- Pushed outward away from the center
 	
 	local cornerFrame = Instance.new("Frame")
 	cornerFrame.Size = UDim2.new(0, cornerSize, 0, cornerSize)
@@ -1928,7 +2062,7 @@ table.insert(connections, RunService.Heartbeat:Connect(function()
 		if timeSinceDamage >= 900 and (tick() - lastSuperLoveTick > 120) then
 			lastSuperLoveTick = tick()
 			queueDialogue("SuperLove")
-		elseif timeSinceDamage >= 300 and timeSinceDamage < 900 and (tick() - lastLoveyDoveyTick > 90) then
+		elseif timeSinceDamage >= 180 and timeSinceDamage < 900 and (tick() - lastLoveyDoveyTick > 90) then
 			lastLoveyDoveyTick = tick()
 			queueDialogue("LoveyDovey")
 		end
