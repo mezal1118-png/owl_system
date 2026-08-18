@@ -430,7 +430,7 @@ local DialogueLines = {
 local zeroWrapper = Instance.new("Frame")
 zeroWrapper.Size = UDim2.new(0, 240, 0, 56)
 zeroWrapper.Position = UDim2.new(0.5, -120, 0, -2) 
-zeroWrapper.BackgroundColor3 = COLOR_BG
+zeroWrapper.BackgroundColor3 = Color3.fromRGB(10, 5, 14)
 zeroWrapper.BorderSizePixel = 0
 zeroWrapper.BackgroundTransparency = 1
 zeroWrapper.ZIndex = 15
@@ -473,7 +473,7 @@ zeroText.Size = UDim2.new(1, -14, 1, -20)
 zeroText.Position = UDim2.new(0, 8, 0, 18)
 zeroText.BackgroundTransparency = 1
 zeroText.Text = ""
-zeroText.TextColor3 = COLOR_TEXT_DIM
+zeroText.TextColor3 = Color3.fromRGB(210, 200, 225)
 zeroText.TextTransparency = 1
 zeroText.Font = Enum.Font.Code
 zeroText.TextSize = 10
@@ -1747,6 +1747,13 @@ local function toggleMinimize()
 	end
 end
 
+local function toggle()
+	active = not active
+	if not active then resetMomentum() end
+	if active then soundOn:Play() else soundOff:Play() end
+	updateUI()
+end
+
 local function wipeSystem()
 	shuttingDown = true
 	restoreLighting()
@@ -1908,7 +1915,7 @@ local function registerDescendant(desc)
 		if isTwisted(desc) then 
 			TrackedEntities.Twisteds[desc] = true 
 		elseif isMachine(desc) then
-			registerMachine(desc)
+			TrackedEntities.Machines[desc] = true
 		end
 	elseif desc:IsA("ProximityPrompt") then
 		TrackedEntities.Prompts[desc] = true
@@ -1953,8 +1960,6 @@ end
 updateUI()
 scanAndApplyESP()
 updateProximityPrompts()
-
-local lastRadarTick = 0
 
 local function getOrCreateBlip(target, blipType)
 	if cachedBlips[target] then return cachedBlips[target] end
@@ -2090,10 +2095,7 @@ table.insert(connections, RunService.RenderStepped:Connect(function()
 		scannerPivot.Rotation = (tick() * 150) % 360
 	end
 
-	if tick() - lastRadarTick >= 0.03 then
-		lastRadarTick = tick()
-		executeRadarTick()
-	end
+	executeRadarTick()
 end))
 
 table.insert(connections, RunService.Heartbeat:Connect(function()
