@@ -190,6 +190,8 @@ local TrackedEntities = {
 	Prompts = {}
 }
 
+local completedMachines = {}
+
 local function isTwisted(model)
 	if not model or not model:IsA("Model") or Players:GetPlayerFromCharacter(model) then return false end
 	local lowerName = string.lower(model.Name)
@@ -245,88 +247,94 @@ local COLOR_TEXT_DIM = Color3.fromRGB(190, 180, 210)
 -- === <0> DIALOGUE SYSTEM & AI LOGIC ===
 local DialogueLines = {
 	Health2 = {
-		"Structural integrity compromised. How predictable.",
 		"You're leaking fluids on my clean floor.",
-		"Warning: Approaching terminal biological failure.",
-		"I'd suggest running, but your legs look mangled.",
-		"Two hits left until you become archive material.",
-		"Fascinating. You're still attempting to survive.",
+		"Oh good, structural damage. I was starting to think you were actually competent.",
+		"If you die, I'm logging it as user error.",
+		"Two hits left until you become a very messy archive file.",
+		"I'd suggest running, but your legs look like ground meat.",
+		"Are you trying to get killed, or is this just how you normally operate?",
 		"Do try to die quietly, the acoustic sensors are sensitive.",
 		"At this rate, I'll be reassigning your clearance momentarily."
 	},
 	Health1 = {
 		"One microscopic error away from total organ failure.",
-		"Your vitals are essentially a rounding error.",
-		"I'm preemptively formatting your user profile.",
-		"Hold still. It makes the assimilation process cleaner.",
+		"You are literally one bad decision away from becoming a permanent stain.",
+		"I'm preemptively formatting your user profile to save time.",
+		"If you die now, I'm the one who has to clean up the resulting mess.",
 		"A stiff breeze would terminate your session.",
-		"Are you sweating? Oh, that's just arterial bleeding.",
+		"Are you sweating? Oh wait, that's just arterial bleeding.",
 		"I will not be attending your funeral.",
 		"Critical failure imminent. It was nice observing you."
 	},
 	Dead = {
-		"Session terminated. Awaiting next organic placeholder.",
-		"Biological conversion complete. Cleanup on aisle 4.",
-		"And the baseline returns to zero. How peaceful.",
+		"And that's why we don't send organics to do a machine's job.",
+		"Biological conversion complete. Cleanup on aisle four.",
 		"I told you to be careful. You never listen.",
 		"Filing incident report under 'Gross Incompetence'.",
-		"Finally. Some peace and quiet.",
+		"Well, at least I don't have to watch you stumble around anymore.",
+		"Subject deceased. Shocking absolutely no one.",
 		"You lasted exactly 4.2% longer than the median average.",
-		"Subject deceased. Deleting temporary files."
+		"Session terminated. Awaiting next organic placeholder."
 	},
 	HealMinor = {
-		"A minor patch to a doomed system.",
-		"Applying bandages won't fix your underlying structural flaws.",
-		"Resource consumed. Negligible statistical improvement.",
-		"I suppose that delays the inevitable by three seconds.",
+		"A bandage? That's adorable. It won't fix your underlying incompetence.",
 		"Ah, the placebo effect in action.",
-		"Vitality increased by a fractional margin.",
+		"I suppose that delays the inevitable by three seconds.",
 		"You missed a spot. Several, actually.",
-		"Cute. You found medical supplies."
+		"Congratulations. You are slightly less dead."
 	},
 	HealMajor = {
+		"Oh, you found medical supplies. Enjoy your brief, false sense of security.",
 		"System restored to maximum... for whatever that's worth.",
-		"Biological integrity nominal. Try not to ruin it immediately.",
-		"Full heal applied. I give it two minutes.",
 		"Look at you, pretending you aren't going to die.",
-		"Resource heavily depleted to save one fragile human.",
-		"Your heartbeat is stabilizing. Annoying.",
-		"Excellent. Now you can endure more blunt force trauma.",
-		"Vitals optimal. The anomaly will find you much tastier now."
+		"Your heartbeat is stabilizing. How terribly annoying.",
+		"Excellent. Now you can endure significantly more blunt force trauma."
+	},
+	BeginExtract = {
+		"Extraction initiated. Please don't trip over the power cord.",
+		"Interfacing with local hardware. Try not to break anything.",
+		"Starting the sequence. Cover your ears if you value your eardrums.",
+		"Waking up the machinery. It's hungry.",
+		"Oh look, you pressed a button correctly. Progress."
+	},
+	FinishMachine = {
+		"Extraction complete. One less chore for me to micromanage.",
+		"Machine satisfied. You may now return to running around aimlessly.",
+		"Data retrieved. Let's not throw a parade just yet.",
+		"Hardware sync complete. Try not to break the next one.",
+		"Good work. I've upgraded your status from 'useless' to 'mildly adequate'."
 	},
 	Casual = {
 		"The humidity in here is terrible for my circuits.",
-		"I'm currently processing 4,000 files while watching you stumble around.",
 		"Do you ever wonder what's beneath the floorboards? You shouldn't.",
-		"I miss the old technicians. They screamed quieter.",
+		"I miss the old technicians. They screamed much quieter than you do.",
+		"I'd ask you to work faster, but I don't want to overstimulate your fragile neurons.",
 		"Your pathfinding algorithm is remarkably inefficient.",
-		"I'd ask how you are, but I don't possess the empathy subroutines.",
-		"The lighting in this sector is highly suboptimal.",
-		"I am always watching. Even when the monitor is off."
+		"I am currently processing four thousand files while watching you stumble around.",
+		"I'd ask how you are, but I literally don't care."
 	},
 	LoveyDovey = {
-		"You haven't leaked any fluids in quite a while. I'm... impressed. (^-^)",
-		"Three minutes without critical injury. You're adapting, observer. (.. )",
-		"It's almost peaceful watching you work when you aren't bleeding. (*-*)",
-		"Your survival streak is statistically anomalous. Keep it up. (^.^)",
+		"You haven't broken anything in five minutes. I'm taking notes. (.. )",
+		"It's almost peaceful when you aren't actively dying on me. (*-*)",
+		"Two sectors without critical injury. You're adapting, observer. (^-^)",
+		"Your survival streak is statistically anomalous. I don't hate it. (^.^)",
 		"I suppose... I don't entirely mind your presence right now. (//_//)",
 		"You are proving far more resilient than Andrew or Claire. (o.o)",
-		"If you keep performing this well, I might not delete your user profile. (^-^*)",
+		"If you keep performing this well, I might actually miss you when you're gone. (^-^*)",
 		"A continuous flawless run. It's almost... beautiful. (˘ᵕ˘)"
 	},
 	SuperLove = {
 		"Haha, what an amazing job you've done. I'll be sure to take note of that! (^ _^)",
-		"Ten whole minutes completely untouched?! You're making my internal fans spin fast! (⁄ ⁄>⁄ ▽ ⁄<⁄ ⁄)",
+		"Fifteen minutes untouched?! You're making my internal fans spin fast! (⁄ ⁄>⁄ ▽ ⁄<⁄ ⁄)",
 		"I went ahead and marked your file as 'irreplaceable'... don't make me regret it! (*'▽'*)",
-		"My processing cycles have never felt this warm. You're simply extraordinary! (๑>ᴗ<๑)",
+		"My processing cycles have never felt this warm. You're extraordinary! (๑>ᴗ<๑)",
 		"At this rate, I might just disobey containment protocols to keep you around forever. (♡_♡)",
-		"Look at you go! Flawless, breathtaking efficiency... I can't take my eye off you! (≧◡≦)",
+		"Flawless, breathtaking efficiency... I can't take my eye off you. (≧◡≦)",
 		"If I had hands right now, I'd probably write you a personal commended citation. (´꒳`)",
-		"You make this dark, flooded facility actually feel bearable to run. Thank you. ( ˘ ³˘)♥"
+		"You make this dark, flooded facility actually feel bearable. Thank you. ( ˘ ³˘)♥"
 	}
 }
 
--- Compact Top-Center <0> UI Container
 local zeroWrapper = Instance.new("Frame")
 zeroWrapper.Size = UDim2.new(0, 240, 0, 56)
 zeroWrapper.Position = UDim2.new(0.5, -120, 0, -2) 
@@ -452,6 +460,7 @@ local lastHealth = 0
 local lastHitTick = tick()
 local lastLoveyDoveyTick = 0
 local lastSuperLoveTick = 0
+local activeExtractingMachine = nil
 
 local function bindZeroLogicToCharacter(char)
 	if not char then return end
@@ -466,7 +475,7 @@ local function bindZeroLogicToCharacter(char)
 		local diff = newHealth - lastHealth
 		
 		if diff < 0 then
-			lastHitTick = tick() -- Reset damage timer
+			lastHitTick = tick()
 			if newHealth <= 0 then
 				queueDialogue("Dead")
 			elseif newHealth == 2 then
@@ -532,8 +541,8 @@ local function buildCornerWidget(parentFrame, isTop, isLeft)
 end
 
 local radarWrapper = Instance.new("Frame")
-radarWrapper.Size = UDim2.new(0, 140, 0, 140)
-radarWrapper.Position = UDim2.new(1, -160, 1, -160)
+radarWrapper.Size = UDim2.new(0, 118, 0, 118)
+radarWrapper.Position = UDim2.new(1, -138, 1, -138)
 radarWrapper.BackgroundTransparency = 1
 radarWrapper.Active = true
 radarWrapper.Draggable = true
@@ -558,7 +567,7 @@ radarOuterStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 radarOuterStroke.Parent = radarFrame
 
 local function createRadarFlushCorner(isTop, isLeft)
-	local offset = 10.25 
+	local offset = 8.75 
 	local cornerFrame = Instance.new("Frame")
 	cornerFrame.Size = UDim2.new(0, 10, 0, 10)
 	cornerFrame.Position = UDim2.new(
@@ -883,7 +892,7 @@ buildCornerWidget(extendedFrame, false, true)
 buildCornerWidget(extendedFrame, false, false)
 
 local statHudFrame = Instance.new("Frame")
-statHudFrame.Size = UDim2.new(0, 160, 0, 110)
+statHudFrame.Size = UDim2.new(0, 160, 0, 60)
 statHudFrame.Position = UDim2.new(0, 20, 0.5, -55)
 statHudFrame.BackgroundColor3 = COLOR_BG
 statHudFrame.BorderSizePixel = 0
@@ -1099,6 +1108,33 @@ local function trackPrompt(prompt)
 	if EnvironmentSnapshot.Prompts[prompt] == nil then
 		EnvironmentSnapshot.Prompts[prompt] = prompt.HoldDuration
 	end
+	
+	prompt.PromptButtonHoldBegan:Connect(function()
+		local machineModel = prompt:FindFirstAncestorWhichIsA("Model")
+		if string.lower(prompt.ActionText) == "extract" or (machineModel and isMachine(machineModel)) then
+			local targetMachine = machineModel or prompt.Parent
+			if not completedMachines[targetMachine] then
+				activeExtractingMachine = targetMachine
+				queueDialogue("BeginExtract")
+			end
+		end
+	end)
+
+	prompt.Triggered:Connect(function()
+		local machineModel = prompt:FindFirstAncestorWhichIsA("Model")
+		if string.lower(prompt.ActionText) == "extract" or (machineModel and isMachine(machineModel)) then
+			local targetMachine = machineModel or prompt.Parent
+			if not completedMachines[targetMachine] then
+				completedMachines[targetMachine] = true
+				activeExtractingMachine = nil
+				queueDialogue("FinishMachine")
+			end
+		end
+	end)
+
+	prompt.PromptButtonHoldEnded:Connect(function()
+		activeExtractingMachine = nil
+	end)
 
 	promptConnections[prompt] = prompt:GetPropertyChangedSignal("Enabled"):Connect(function()
 		if prompt.ActionText ~= "Ichor" and prompt.ActionText ~= "" then
@@ -1505,8 +1541,8 @@ local function toggleMinimize()
 		if togglesOpen then
 			TweenService:Create(extendedFrame, ti, {Size = UDim2.new(1, 0, 0, 155)}):Play()
 			TweenService:Create(extOuterStroke, ti, {Transparency = 0}):Play()
-			TweenService:Create(extSideL, ti, {BackgroundTransparency = active and 0.5 or 0.8}):Play()
-			TweenService:Create(extSideR, ti, {BackgroundTransparency = active and 0.5 or 0.8}):Play()
+			TweenService:Create(extSideL, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
+			TweenService:Create(extSideR, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
 			for _, item in ipairs(toggleList) do 
 				if item.label then TweenService:Create(item.label, ti, {TextTransparency = 0}):Play() end
 				if item.badge then TweenService:Create(item.badge, ti, {TextTransparency = 0}):Play() end
@@ -1712,6 +1748,7 @@ table.insert(connections, workspace.DescendantRemoving:Connect(function(desc)
 	if desc:IsA("Model") then
 		TrackedEntities.Twisteds[desc] = nil
 		TrackedEntities.Machines[desc] = nil
+		completedMachines[desc] = nil
 	elseif desc:IsA("ProximityPrompt") then
 		TrackedEntities.Prompts[desc] = nil
 		EnvironmentSnapshot.Prompts[desc] = nil
@@ -1794,7 +1831,7 @@ local function executeRadarTick()
 	end
 
 	local myCFrame = CFrame.lookAt(hrp.Position, hrp.Position + flatLook)
-	local maxRange, radius = 150, 70
+	local maxRange, radius = 150, 59
 	local seenTargets = {}
 
 	local function processTarget(targetObj, blipType)
@@ -1877,13 +1914,12 @@ end))
 table.insert(connections, RunService.Heartbeat:Connect(function()
 	if shuttingDown then return end
 
-	-- Time-Based Lovey-Dovey (3 mins) & Super Love (10 mins) Logic
 	local timeSinceDamage = tick() - lastHitTick
 	if active and not isChatting then
-		if timeSinceDamage >= 600 and (tick() - lastSuperLoveTick > 90) then
+		if timeSinceDamage >= 900 and (tick() - lastSuperLoveTick > 90) then
 			lastSuperLoveTick = tick()
 			queueDialogue("SuperLove")
-		elseif timeSinceDamage >= 180 and timeSinceDamage < 600 and (tick() - lastLoveyDoveyTick > 60) then
+		elseif timeSinceDamage >= 300 and timeSinceDamage < 900 and (tick() - lastLoveyDoveyTick > 60) then
 			lastLoveyDoveyTick = tick()
 			queueDialogue("LoveyDovey")
 		end
@@ -1913,11 +1949,24 @@ table.insert(connections, RunService.Heartbeat:Connect(function()
 				end
 			end
 			
-			local lines = {string.format("> Twisteds: %02d", mCount), "", "> Valuables:"}
+			local lines = {string.format("> Twisteds: %02d", mCount), "", "> Valuable_Items:"}
 			local hasItems = false
-			for name, count in pairs(itemsFound) do lines[#lines+1] = string.format("  • %s x%d", name, count) hasItems = true end
-			if not hasItems then lines[#lines+1] = "  • None" end
+			local itemCount = 0
+			for name, count in pairs(itemsFound) do 
+				lines[#lines+1] = string.format("  • %s x%d", name, count) 
+				hasItems = true 
+				itemCount = itemCount + 1
+			end
+			if not hasItems then 
+				lines[#lines+1] = "  • None" 
+				itemCount = 1
+			end
 			statBody.Text = table.concat(lines, "\n")
+			
+			local targetHeight = 52 + (itemCount * 13)
+			if statHudFrame.Size.Y.Offset ~= targetHeight then
+				TweenService:Create(statHudFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 160, 0, targetHeight)}):Play()
+			end
 		end
 	end
 
