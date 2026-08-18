@@ -430,7 +430,7 @@ local DialogueLines = {
 local zeroWrapper = Instance.new("Frame")
 zeroWrapper.Size = UDim2.new(0, 240, 0, 56)
 zeroWrapper.Position = UDim2.new(0.5, -120, 0, -2) 
-zeroWrapper.BackgroundColor3 = Color3.fromRGB(10, 5, 14)
+zeroWrapper.BackgroundColor3 = COLOR_BG
 zeroWrapper.BorderSizePixel = 0
 zeroWrapper.BackgroundTransparency = 1
 zeroWrapper.ZIndex = 15
@@ -473,7 +473,7 @@ zeroText.Size = UDim2.new(1, -14, 1, -20)
 zeroText.Position = UDim2.new(0, 8, 0, 18)
 zeroText.BackgroundTransparency = 1
 zeroText.Text = ""
-zeroText.TextColor3 = Color3.fromRGB(210, 200, 225)
+zeroText.TextColor3 = COLOR_TEXT_DIM
 zeroText.TextTransparency = 1
 zeroText.Font = Enum.Font.Code
 zeroText.TextSize = 10
@@ -1961,8 +1961,6 @@ updateUI()
 scanAndApplyESP()
 updateProximityPrompts()
 
-local lastRadarTick = 0
-
 local function getOrCreateBlip(target, blipType)
 	if cachedBlips[target] then return cachedBlips[target] end
 	local blip = Instance.new("Frame")
@@ -2097,10 +2095,7 @@ table.insert(connections, RunService.RenderStepped:Connect(function()
 		scannerPivot.Rotation = (tick() * 150) % 360
 	end
 
-	if tick() - lastRadarTick >= 0.03 then
-		lastRadarTick = tick()
-		executeRadarTick()
-	end
+	executeRadarTick()
 end))
 
 table.insert(connections, RunService.Heartbeat:Connect(function()
