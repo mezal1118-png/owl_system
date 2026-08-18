@@ -430,7 +430,7 @@ local DialogueLines = {
 local zeroWrapper = Instance.new("Frame")
 zeroWrapper.Size = UDim2.new(0, 240, 0, 56)
 zeroWrapper.Position = UDim2.new(0.5, -120, 0, -2) 
-zeroWrapper.BackgroundColor3 = COLOR_BG
+zeroWrapper.BackgroundColor3 = Color3.fromRGB(10, 5, 14)
 zeroWrapper.BorderSizePixel = 0
 zeroWrapper.BackgroundTransparency = 1
 zeroWrapper.ZIndex = 15
@@ -473,7 +473,7 @@ zeroText.Size = UDim2.new(1, -14, 1, -20)
 zeroText.Position = UDim2.new(0, 8, 0, 18)
 zeroText.BackgroundTransparency = 1
 zeroText.Text = ""
-zeroText.TextColor3 = COLOR_TEXT_DIM
+zeroText.TextColor3 = Color3.fromRGB(210, 200, 225)
 zeroText.TextTransparency = 1
 zeroText.Font = Enum.Font.Code
 zeroText.TextSize = 10
@@ -612,7 +612,7 @@ local function buildCornerWidget(parentFrame, isTop, isLeft)
 	cornerFrame.AnchorPoint = Vector2.new(isLeft and 1 or 0, isTop and 1 or 0)
 	cornerFrame.Position = UDim2.new(
 		isLeft and 0 or 1, isLeft and -offset or offset,
-		isTop and 0 or 1, isTop and -offset or offset
+		isTop and 0 or 1, isTop and 0 or -thickness
 	)
 	cornerFrame.Parent = parentFrame
 
@@ -1914,6 +1914,9 @@ local function registerDescendant(desc)
 	if desc:IsA("Model") then
 		if isTwisted(desc) then 
 			TrackedEntities.Twisteds[desc] = true 
+			if toggleStates.Twisted_ESP and isTwistedAllowed(desc) then
+				applyESP(desc, "Monster")
+			end
 		elseif isMachine(desc) then
 			registerMachine(desc)
 		end
@@ -1935,14 +1938,15 @@ end
 
 table.insert(connections, workspace.DescendantAdded:Connect(function(desc)
 	registerDescendant(desc)
-	if toggleStates.Twisted_ESP and isTwisted(desc) and isTwistedAllowed(desc) then task.wait(0.15) applyESP(desc, "Monster") end
-	if toggleStates.Machine_ESP and (TrackedEntities.Machines[desc] or isMachine(desc)) then task.wait(0.15) applyESP(desc, "Machine") end
+	if toggleStates.Twisted_ESP and isTwisted(desc) and isTwistedAllowed(desc) then applyESP(desc, "Monster") end
+	if toggleStates.Machine_ESP and (TrackedEntities.Machines[desc] or isMachine(desc)) then applyESP(desc, "Machine") end
 end))
 
 table.insert(connections, workspace.DescendantRemoving:Connect(function(desc)
 	if desc:IsA("Model") then
 		TrackedEntities.Twisteds[desc] = nil
 		TrackedEntities.Machines[desc] = nil
+		removeSingleESP(desc)
 	elseif desc:IsA("ProximityPrompt") then
 		TrackedEntities.Prompts[desc] = nil
 		EnvironmentSnapshot.Prompts[desc] = nil
