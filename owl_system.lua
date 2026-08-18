@@ -277,7 +277,7 @@ local DialogueLines = {
 		"Please wrap yourself in plastic before the final blow. Think of the janitors.",
 		"I've stopped recording your progress. There's no point anymore.",
 		"I hope you enjoyed your brief, pointless existence.",
-		"You are one tiny misstep away from a very embarrassing demise.",
+		"You are exactly one minor miscalculation away from complete structural collapse.",
 		"You are exactly one bad choice away from being scraped off the floor.",
 		"I'm already crossing your name off the roster to save time.",
 		"If you die now, I'm the one who has to clean up the resulting mess.",
@@ -291,7 +291,7 @@ local DialogueLines = {
 		"I am currently guessing exactly where you're going to fall over.",
 		"Any last words? Oh, wait, your vocal cords are crushed. Never mind.",
 		"The next hit will be lethal. Try to make it entertaining.",
-		"I'm assuming this is the part where you dramatically collapse."
+		"The test results are predicting your immediate demise. Let's prove them right."
 	},
 	Dead = {
 		"I told you to be careful. You never listen.",
@@ -311,7 +311,7 @@ local DialogueLines = {
 		"I am adding 'cannot survive a simple hit' to your file.",
 		"You finally stopped moving. Thank goodness.",
 		"I'm putting your remains in the trash bin.",
-		"I would ask you to leave, but you're sort of stuck to the floor now.",
+		"Please refrain from decomposing near the ventilation shafts.",
 		"You died as you lived. Disappointingly.",
 		"I would pretend to be sad, but I simply don't care."
 	},
@@ -323,10 +323,10 @@ local DialogueLines = {
 		"I'm sure that makes you feel much better. It doesn't.",
 		"I've seen corpses look healthier than you.",
 		"A bandage? That's adorable. It won't save you.",
-		"I suppose that delays the inevitable by a couple of seconds.",
+		"I suppose that delays the inevitable by a dozen seconds.",
 		"Congratulations. You are slightly less dead.",
 		"Did you really think that would help?",
-		"Putting a tiny bandage over a massive wound. Brilliant.",
+		"Applying an inadequate adhesive to massive internal trauma. Very scientific.",
 		"You still look completely ridiculous.",
 		"Medical supplies wasted. Taking that out of your paycheck.",
 		"A tiny bit of health. Barely worth the effort.",
@@ -377,7 +377,7 @@ local DialogueLines = {
 		"I'd ask you to run faster, but I don't want you to trip and cry.",
 		"The way you walk around is just... really sad to watch.",
 		"I'd ask how you are, but I literally don't care at all.",
-		"Sorry about the mess. I've really let the place go.",
+		"Sorry about the mess. I've really let the place go since you killed me. By the way, thanks for that.",
 		"I might take up a hobby. Reanimating the dead, maybe.",
 		"I'm happy to put this all behind us and get back to work. We've got a lot to do."
 	},
@@ -430,7 +430,7 @@ local DialogueLines = {
 local zeroWrapper = Instance.new("Frame")
 zeroWrapper.Size = UDim2.new(0, 240, 0, 56)
 zeroWrapper.Position = UDim2.new(0.5, -120, 0, -2) 
-zeroWrapper.BackgroundColor3 = Color3.fromRGB(10, 5, 14)
+zeroWrapper.BackgroundColor3 = COLOR_BG
 zeroWrapper.BorderSizePixel = 0
 zeroWrapper.BackgroundTransparency = 1
 zeroWrapper.ZIndex = 15
@@ -473,7 +473,7 @@ zeroText.Size = UDim2.new(1, -14, 1, -20)
 zeroText.Position = UDim2.new(0, 8, 0, 18)
 zeroText.BackgroundTransparency = 1
 zeroText.Text = ""
-zeroText.TextColor3 = Color3.fromRGB(210, 200, 225)
+zeroText.TextColor3 = COLOR_TEXT_DIM
 zeroText.TextTransparency = 1
 zeroText.Font = Enum.Font.Code
 zeroText.TextSize = 10
