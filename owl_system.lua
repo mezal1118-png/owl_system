@@ -335,6 +335,7 @@ local DialogueLines = {
 	}
 }
 
+-- Compact Top-Center <0> UI Container (Raised 20px)
 local zeroWrapper = Instance.new("Frame")
 zeroWrapper.Size = UDim2.new(0, 240, 0, 56)
 zeroWrapper.Position = UDim2.new(0.5, -120, 0, -2) 
@@ -509,29 +510,33 @@ end)
 local techCornerElements = {}
 
 local function buildCornerWidget(parentFrame, isTop, isLeft)
+	local cornerSize = 12
+	local thickness = 2
+	local offset = 4
+
 	local cornerFrame = Instance.new("Frame")
-	cornerFrame.Size = UDim2.new(0, 8, 0, 8)
-	
-	cornerFrame.Position = UDim2.new(
-		isLeft and 0 or 1, isLeft and -6 or -10, 
-		isTop and 0 or 1, isTop and -6 or -10
-	)
-	
+	cornerFrame.Size = UDim2.new(0, cornerSize, 0, cornerSize)
 	cornerFrame.BackgroundTransparency = 1
 	cornerFrame.ZIndex = 6
+	
+	cornerFrame.AnchorPoint = Vector2.new(isLeft and 1 or 0, isTop and 1 or 0)
+	cornerFrame.Position = UDim2.new(
+		isLeft and 0 or 1, isLeft and -offset or offset,
+		isTop and 0 or 1, isTop and -offset or offset
+	)
 	cornerFrame.Parent = parentFrame
 
 	local lineH = Instance.new("Frame")
-	lineH.Size = UDim2.new(1, 0, 0, 1.5)
-	lineH.Position = UDim2.new(0, 0, isTop and 0 or 1, isTop and 0 or -1.5)
+	lineH.Size = UDim2.new(1, 0, 0, thickness)
+	lineH.Position = UDim2.new(0, 0, isTop and 0 or 1, isTop and 0 or -thickness)
 	lineH.BackgroundColor3 = COLOR_INACTIVE
 	lineH.BorderSizePixel = 0
 	lineH.Parent = cornerFrame
 	table.insert(techCornerElements, lineH)
 
 	local lineV = Instance.new("Frame")
-	lineV.Size = UDim2.new(0, 1.5, 1, 0)
-	lineV.Position = UDim2.new(isLeft and 0 or 1, isLeft and 0 or -1.5, 0, 0)
+	lineV.Size = UDim2.new(0, thickness, 1, 0)
+	lineV.Position = UDim2.new(isLeft and 0 or 1, isLeft and 0 or -thickness, 0, 0)
 	lineV.BackgroundColor3 = COLOR_INACTIVE
 	lineV.BorderSizePixel = 0
 	lineV.Parent = cornerFrame
@@ -567,28 +572,33 @@ radarOuterStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 radarOuterStroke.Parent = radarFrame
 
 local function createRadarFlushCorner(isTop, isLeft)
-	local offset = 8.75 
+	local cornerSize = 12
+	local thickness = 2
+	local offset = 8 
+	
 	local cornerFrame = Instance.new("Frame")
-	cornerFrame.Size = UDim2.new(0, 10, 0, 10)
-	cornerFrame.Position = UDim2.new(
-		isLeft and 0 or 1, isLeft and offset or -(offset + 10),
-		isTop and 0 or 1, isTop and offset or -(offset + 10)
-	)
+	cornerFrame.Size = UDim2.new(0, cornerSize, 0, cornerSize)
 	cornerFrame.BackgroundTransparency = 1
 	cornerFrame.ZIndex = 6
+	
+	cornerFrame.AnchorPoint = Vector2.new(isLeft and 0 or 1, isTop and 0 or 1)
+	cornerFrame.Position = UDim2.new(
+		isLeft and 0 or 1, isLeft and offset or -offset,
+		isTop and 0 or 1, isTop and offset or -offset
+	)
 	cornerFrame.Parent = radarWrapper
 
 	local lineH = Instance.new("Frame")
-	lineH.Size = UDim2.new(1, 0, 0, 2)
-	lineH.Position = UDim2.new(0, 0, isTop and 0 or 1, isTop and 0 or -2)
+	lineH.Size = UDim2.new(1, 0, 0, thickness)
+	lineH.Position = UDim2.new(0, 0, isTop and 0 or 1, isTop and 0 or -thickness)
 	lineH.BackgroundColor3 = COLOR_INACTIVE
 	lineH.BorderSizePixel = 0
 	lineH.Parent = cornerFrame
 	table.insert(techCornerElements, lineH)
 
 	local lineV = Instance.new("Frame")
-	lineV.Size = UDim2.new(0, 2, 1, 0)
-	lineV.Position = UDim2.new(isLeft and 0 or 1, isLeft and 0 or -2, 0, 0)
+	lineV.Size = UDim2.new(0, thickness, 1, 0)
+	lineV.Position = UDim2.new(isLeft and 0 or 1, isLeft and 0 or -thickness, 0, 0)
 	lineV.BackgroundColor3 = COLOR_INACTIVE
 	lineV.BorderSizePixel = 0
 	lineV.Parent = cornerFrame
@@ -639,7 +649,7 @@ for i = layerCount, 1, -1 do
 end
 
 local crossV = Instance.new("Frame")
-crossV.Size = UDim2.new(0, 1, 1, 0)
+crossV.Size = UDim2.new(0, 2, 1, 0)
 crossV.Position = UDim2.new(0.5, 0, 0, 0)
 crossV.AnchorPoint = Vector2.new(0.5, 0)
 crossV.BackgroundColor3 = COLOR_INACTIVE
@@ -649,7 +659,7 @@ crossV.ZIndex = 2
 crossV.Parent = radarFrame
 
 local crossH = Instance.new("Frame")
-crossH.Size = UDim2.new(1, 0, 0, 1)
+crossH.Size = UDim2.new(1, 0, 0, 2)
 crossH.Position = UDim2.new(0.5, 0, 0.5, 0)
 crossH.AnchorPoint = Vector2.new(0.5, 0.5)
 crossH.BackgroundColor3 = COLOR_INACTIVE
@@ -690,7 +700,7 @@ scannerPivot.ZIndex = 3
 scannerPivot.Parent = radarFrame
 
 local radarScanner = Instance.new("Frame")
-radarScanner.Size = UDim2.new(0.5, 0, 0, 1.5)
+radarScanner.Size = UDim2.new(0.5, 0, 0, 2)
 radarScanner.Position = UDim2.new(0.5, 0, 0.5, 0)
 radarScanner.AnchorPoint = Vector2.new(0, 0.5) 
 radarScanner.BackgroundColor3 = COLOR_INACTIVE
@@ -885,6 +895,11 @@ scanlineGrad.Color = ColorSequence.new({
 	ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 25))
 })
 scanlineGrad.Parent = scanline
+
+buildCornerWidget(zeroWrapper, true, true)
+buildCornerWidget(zeroWrapper, true, false)
+buildCornerWidget(zeroWrapper, false, true)
+buildCornerWidget(zeroWrapper, false, false)
 
 buildCornerWidget(mainFrame, true, true)
 buildCornerWidget(mainFrame, true, false)
@@ -1916,10 +1931,10 @@ table.insert(connections, RunService.Heartbeat:Connect(function()
 
 	local timeSinceDamage = tick() - lastHitTick
 	if active and not isChatting then
-		if timeSinceDamage >= 900 and (tick() - lastSuperLoveTick > 90) then
+		if timeSinceDamage >= 900 and (tick() - lastSuperLoveTick > 120) then
 			lastSuperLoveTick = tick()
 			queueDialogue("SuperLove")
-		elseif timeSinceDamage >= 300 and timeSinceDamage < 900 and (tick() - lastLoveyDoveyTick > 60) then
+		elseif timeSinceDamage >= 300 and timeSinceDamage < 900 and (tick() - lastLoveyDoveyTick > 90) then
 			lastLoveyDoveyTick = tick()
 			queueDialogue("LoveyDovey")
 		end
