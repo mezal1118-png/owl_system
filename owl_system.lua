@@ -175,6 +175,7 @@ local displayFilters = {
 	Item = {Highlight = true, Header = true},
 	Player = {Highlight = true, Header = true}
 }
+
 local displayFilterList = {"Highlight", "Header"}
 
 local ColorPalettes = {
@@ -194,7 +195,11 @@ local ColorPalettes = {
 	Gold = { Active = Color3.fromRGB(255, 215, 0), Inactive = Color3.fromRGB(80, 75, 50) }
 }
 
-local PaletteNames = {"Original", "Monochrome", "Crimson", "Cobalt", "Emerald", "Amber", "Magenta", "Cyan", "Neon", "Violet", "Orange", "Mint", "Rose", "Gold"}
+local PaletteNames = {
+	"Original", "Monochrome", "Crimson", "Cobalt", "Emerald", "Amber", 
+	"Magenta", "Cyan", "Neon", "Violet", "Orange", "Mint", "Rose", "Gold"
+}
+
 local activePalette = "Original"
 local paletteSelections = {}
 for _, n in ipairs(PaletteNames) do paletteSelections[string.lower(n)] = false end
@@ -228,7 +233,9 @@ local TrackedEntities = {
 local function isTwisted(model)
 	if not model or not model:IsA("Model") or Players:GetPlayerFromCharacter(model) then return false end
 	local lowerName = string.lower(model.Name)
-	return string.find(lowerName, "monster") ~= nil
+	if string.find(lowerName, "monster") ~= nil then return true end
+	if CollectionService:HasTag(model, "Twisted") or CollectionService:HasTag(model, "Monster") then return true end
+	return false
 end
 
 local function isMachine(model)
@@ -301,7 +308,7 @@ local DialogueLines = {
 		"Please wrap yourself in plastic before the final blow. Think of the janitors.",
 		"I've stopped recording your progress. There's no point anymore.",
 		"I hope you enjoyed your brief, pointless existence.",
-		"You are exactly one minor miscalculation away from complete structural collapse.",
+		"You are one tiny misstep away from a very embarrassing demise.",
 		"You are exactly one bad choice away from being scraped off the floor.",
 		"I'm already crossing your name off the roster to save time.",
 		"If you die now, I'm the one who has to clean up the resulting mess.",
@@ -311,7 +318,7 @@ local DialogueLines = {
 		"It's a miracle you're still standing. A disgusting, wet miracle.",
 		"You are breathing very heavily. Try dying faster, it's less annoying.",
 		"I'm already deleting your search history. You're welcome.",
-		"In the event of a catastrophic failure, the last two minutes of my life are preserved. I'll get to watch you fail forever.",
+		"You look terrible. Even by human standards.",
 		"I am currently guessing exactly where you're going to fall over.",
 		"Any last words? Oh, wait, your vocal cords are crushed. Never mind.",
 		"The next hit will be lethal. Try to make it entertaining.",
@@ -334,7 +341,7 @@ local DialogueLines = {
 		"Game over. Waiting for someone better to take your place.",
 		"I am adding 'cannot survive a simple hit' to your file.",
 		"You finally stopped moving. Thank goodness.",
-		"I'm putting your remains in the incinerator.",
+		"I'm putting your remains in the trash bin.",
 		"I would ask you to leave, but you're sort of stuck to the floor now.",
 		"You died as you lived. Disappointingly.",
 		"I would pretend to be sad, but I simply don't care."
@@ -347,10 +354,10 @@ local DialogueLines = {
 		"I'm sure that makes you feel much better. It doesn't.",
 		"I've seen corpses look healthier than you.",
 		"A bandage? That's adorable. It won't save you.",
-		"I suppose that delays the inevitable by a dozen seconds.",
+		"I suppose that delays the inevitable by a couple of seconds.",
 		"Congratulations. You are slightly less dead.",
 		"Did you really think that would help?",
-		"Applying an inadequate adhesive to massive internal trauma. Very scientific.",
+		"Putting a tiny bandage over a massive wound. Brilliant.",
 		"You still look completely ridiculous.",
 		"Medical supplies wasted. Taking that out of your paycheck.",
 		"A tiny bit of health. Barely worth the effort.",
