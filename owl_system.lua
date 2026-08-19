@@ -5,7 +5,6 @@ local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local CollectionService = game:GetService("CollectionService")
-local HttpService = game:GetService("HttpService")
 
 local player = Players.LocalPlayer
 local pgui = player:WaitForChild("PlayerGui")
@@ -924,7 +923,7 @@ radarWrapper.InputChanged:Connect(function(input)
 end)
 
 local configEditorFrame = Instance.new("Frame")
-configEditorFrame.Size = UDim2.new(0, 150, 0, 185)
+configEditorFrame.Size = UDim2.new(0, 150, 0, 135)
 configEditorFrame.Position = UDim2.new(1, -300, 0, 24)
 configEditorFrame.BackgroundColor3 = COLOR_BG
 configEditorFrame.BorderSizePixel = 0
@@ -976,7 +975,7 @@ configScroll.BackgroundTransparency = 1
 configScroll.BorderSizePixel = 0
 configScroll.ScrollBarThickness = 2
 configScroll.ScrollBarImageColor3 = COLOR_INACTIVE
-configScroll.CanvasSize = UDim2.new(0, 0, 0, 175)
+configScroll.CanvasSize = UDim2.new(0, 0, 0, 100)
 configScroll.ZIndex = 12
 configScroll.Parent = configEditorFrame
 
@@ -985,7 +984,6 @@ configList.Padding = UDim.new(0, 4)
 configList.Parent = configScroll
 
 local listeningKeySetting = nil
-local CONFIG_FILE_NAME = "WeepingLakeConfig.json"
 
 local function createConfigRow(labelName, getValueText, onClick)
 	local row = Instance.new("Frame")
@@ -1057,105 +1055,6 @@ local rngBtn = createConfigRow("Max Range", function() return tostring(ConfigSet
 	radarRange = (radarRange >= 250) and 75 or (radarRange + 25)
 	ConfigSettings.RadarRange = radarRange
 	btn.Text = tostring(radarRange) .. "s"
-end)
-
-local function serializeConfig()
-	local exportData = {
-		Config = {
-			ToggleKey = ConfigSettings.ToggleKey.Name,
-			PanicKey = ConfigSettings.PanicKey.Name,
-			RadarRange = ConfigSettings.RadarRange,
-			DialogueSound = ConfigSettings.DialogueSound
-		},
-		Toggles = toggleStates,
-		MonsterFilters = monsterFilters,
-		ItemFilters = itemFilters,
-		DisplayFilters = displayFilters
-	}
-	return HttpService:JSONEncode(exportData)
-end
-
-local function applySerializedConfig(jsonStr)
-	local success, data = pcall(function()
-		return HttpService:JSONDecode(jsonStr)
-	end)
-	if not success or type(data) ~= "table" then return false end
-
-	if data.Config then
-		if data.Config.ToggleKey and Enum.KeyCode[data.Config.ToggleKey] then
-			ConfigSettings.ToggleKey = Enum.KeyCode[data.Config.ToggleKey]
-			keybindBtn.Text = ConfigSettings.ToggleKey.Name
-		end
-		if data.Config.PanicKey and Enum.KeyCode[data.Config.PanicKey] then
-			ConfigSettings.PanicKey = Enum.KeyCode[data.Config.PanicKey]
-			panicBtn.Text = ConfigSettings.PanicKey.Name
-		end
-		if data.Config.RadarRange then
-			ConfigSettings.RadarRange = data.Config.RadarRange
-			radarRange = data.Config.RadarRange
-			rngBtn.Text = tostring(radarRange) .. "s"
-		end
-		if data.Config.DialogueSound ~= nil then
-			ConfigSettings.DialogueSound = data.Config.DialogueSound
-			sndBtn.Text = ConfigSettings.DialogueSound and "[ON]" or "[OFF]"
-		end
-	end
-
-	if data.Toggles then
-		for k, v in pairs(data.Toggles) do
-			if toggleStates[k] ~= nil and k ~= "Config_Editor" then
-				executeToggleLogic(k, v)
-			end
-		end
-		for _, item in ipairs(toggleList) do
-			if item.badge and item.label then
-				for id, val in pairs(toggleStates) do
-					if item.label.Text == string.gsub(id, "_", " ") or item.label.Text == id then
-						item.badge.Text = val and "[#]" or "[ ]"
-					end
-				end
-			end
-		end
-	end
-
-	if data.MonsterFilters then
-		for k, v in pairs(data.MonsterFilters) do monsterFilters[k] = v end
-	end
-	if data.ItemFilters then
-		for k, v in pairs(data.ItemFilters) do itemFilters[k] = v end
-	end
-	if data.DisplayFilters then
-		for k, v in pairs(data.DisplayFilters) do displayFilters[k] = v end
-	end
-
-	return true
-end
-
-createConfigRow("Save File", function() return "[SAVE]" end, function(btn)
-	local json = serializeConfig()
-	local saved = false
-	if writefile then
-		pcall(function()
-			writefile(CONFIG_FILE_NAME, json)
-			saved = true
-		end)
-	end
-	btn.Text = saved and "[OK!]" or "[ERR]"
-	task.delay(1.5, function() btn.Text = "[SAVE]" end)
-end)
-
-createConfigRow("Load File", function() return "[LOAD]" end, function(btn)
-	local loaded = false
-	if readfile and isfile and isfile(CONFIG_FILE_NAME) then
-		pcall(function()
-			local content = readfile(CONFIG_FILE_NAME)
-			if applySerializedConfig(content) then
-				loaded = true
-			end
-		end)
-	end
-	btn.Text = loaded and "[OK!]" or "[ERR]"
-	task.delay(1.5, function() btn.Text = "[LOAD]" end)
 end)
 
 local mainFrame = Instance.new("Frame")
