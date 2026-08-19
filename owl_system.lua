@@ -146,7 +146,6 @@ local toggleList = {}
 local lastStatUpdate, lastEscapeTap = 0, 0
 local escapeToggleKey = false
 local radarRange = 150
-local lastPingTick = 0
 
 local ConfigSettings = {
 	ToggleKey = Enum.KeyCode.P,
@@ -495,12 +494,12 @@ zeroText.ZIndex = 16
 zeroText.Parent = zeroWrapper
 
 local soundSonarStart = Instance.new("Sound")
-soundSonarStart.SoundId = "rbxassetid://108463235109016"
+soundSonarStart.SoundId = "https://assetdelivery.roblox.com/v1/asset/?id=108463235109016"
 soundSonarStart.Volume = 0.55
 soundSonarStart.Parent = zeroWrapper
 
 local soundTypewriter = Instance.new("Sound")
-soundTypewriter.SoundId = "rbxassetid://128333756908969"
+soundTypewriter.SoundId = "https://assetdelivery.roblox.com/v1/asset/?id=128333756908969"
 soundTypewriter.Volume = 0.25
 soundTypewriter.PlaybackSpeed = 1.0
 soundTypewriter.Parent = zeroWrapper
@@ -680,12 +679,6 @@ radarFrame.BorderSizePixel = 0
 radarFrame.ZIndex = 1
 radarFrame.ClipsDescendants = true 
 radarFrame.Parent = radarWrapper
-
-local sonarPingSound = Instance.new("Sound")
-sonarPingSound.SoundId = "rbxassetid://6895079853"
-sonarPingSound.Volume = 0.4
-sonarPingSound.PlaybackSpeed = 1.8
-sonarPingSound.Parent = radarFrame
 
 local radarCorner = Instance.new("UICorner")
 radarCorner.CornerRadius = UDim.new(1, 0)
@@ -2392,15 +2385,11 @@ local function executeRadarTick()
 				end
 			end
 
+			local isSwept = false
 			local blipAngle = (math.deg(math.atan2(rY, rX)) + 360) % 360
 			local scanAngle = scannerPivot.Rotation % 360
 			local angleDiff = math.abs(blipAngle - scanAngle)
-			local isSwept = (angleDiff < 14 or angleDiff > 346)
-
-			if isSwept and toggleStates.Advanced_Radar and blipType == "Twisted" and dist2D <= 30 and tick() - lastPingTick > 0.6 then
-				lastPingTick = tick()
-				sonarPingSound:Play()
-			end
+			isSwept = (angleDiff < 14 or angleDiff > 346)
 
 			local str = blip:FindFirstChildOfClass("UIStroke")
 			if isSwept then
