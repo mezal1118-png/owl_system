@@ -909,14 +909,11 @@ soundOn.SoundId = "rbxassetid://6895079853"
 soundOn.Volume = 0.5
 soundOn.Parent = mainFrame
 
-local soundOff = Instance.new("SoundOff")
-pcall(function()
-	soundOff = Instance.new("Sound")
-	soundOff.SoundId = "rbxassetid://6895079853"
-	soundOff.PlaybackSpeed = 0.8
-	soundOff.Volume = 0.5
-	soundOff.Parent = mainFrame
-end)
+local soundOff = Instance.new("Sound")
+soundOff.SoundId = "rbxassetid://6895079853"
+soundOff.PlaybackSpeed = 0.8
+soundOff.Volume = 0.5
+soundOff.Parent = mainFrame
 
 local outerStroke = Instance.new("UIStroke")
 outerStroke.Thickness = 1.5
@@ -2057,10 +2054,6 @@ updateUI()
 scanAndApplyESP()
 updateProximityPrompts()
 
-local losParams = RaycastParams.new()
-losParams.FilterType = Enum.RaycastFilterType.Exclude
-losParams.IgnoreWater = true
-
 local function getOrCreateBlip(target, blipType)
 	if cachedBlips[target] then return cachedBlips[target] end
 	local blip = Instance.new("Frame")
@@ -2141,8 +2134,6 @@ local function executeRadarTick()
 	local seenTargets = {}
 	local nearestTwistedDist = math.huge
 
-	losParams.FilterDescendantsInstances = {player.Character}
-
 	local function processTarget(targetObj, blipType)
 		if not targetObj or not targetObj.Parent then return end
 		
@@ -2216,15 +2207,6 @@ local function executeRadarTick()
 				end
 			end
 
-			local isOccluded = false
-			if toggleStates.Advanced_Radar and not isClamped then
-				local rayDir = part.Position - hrp.Position
-				local rayHit = workspace:Raycast(hrp.Position, rayDir, losParams)
-				if rayHit and not rayHit.Instance:IsDescendantOf(targetObj) then
-					isOccluded = true
-				end
-			end
-
 			local blipAngle = (math.deg(math.atan2(rY, rX)) + 360) % 360
 			local scanAngle = scannerPivot.Rotation % 360
 			local angleDiff = math.abs(blipAngle - scanAngle)
@@ -2235,15 +2217,13 @@ local function executeRadarTick()
 				sonarPingSound:Play()
 			end
 
-			local baseTrans = isOccluded and 0.25 or 0
-			local maxFadeTrans = isOccluded and 0.45 or 0.35
 			local str = blip:FindFirstChildOfClass("UIStroke")
 			if isSwept then
-				blip.BackgroundTransparency = baseTrans
-				if str then str.Transparency = baseTrans end
+				blip.BackgroundTransparency = 0
+				if str then str.Transparency = 0 end
 			else
-				blip.BackgroundTransparency = math.clamp(blip.BackgroundTransparency + 0.04, baseTrans, maxFadeTrans)
-				if str then str.Transparency = math.clamp(str.Transparency + 0.04, baseTrans, maxFadeTrans) end
+				blip.BackgroundTransparency = math.clamp(blip.BackgroundTransparency + 0.04, 0, 0.35)
+				if str then str.Transparency = math.clamp(str.Transparency + 0.04, 0, 0.5) end
 			end
 		end
 	end
