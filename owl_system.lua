@@ -1283,10 +1283,14 @@ end
 
 local function attachMachineListener(machine, prompt)
 	prompt:GetPropertyChangedSignal("Enabled"):Connect(function()
-		if toggleStates.Machine_ESP then
-			if not prompt.Enabled then
-				removeSingleESP(machine)
-			else
+		if not prompt.Enabled then
+			removeSingleESP(machine)
+			if cachedBlips[machine] then
+				cachedBlips[machine]:Destroy()
+				cachedBlips[machine] = nil
+			end
+		else
+			if toggleStates.Machine_ESP then
 				applyESP(machine, "Machine")
 			end
 		end
@@ -1713,7 +1717,6 @@ local function updateUI()
 	for _, blip in pairs(cachedBlips) do
 		local stroke = blip:FindFirstChildOfClass("UIStroke")
 		local elev = blip:FindFirstChild("ElevTag")
-		local vec = blip:FindFirstChild("VecLine")
 		local targetBg, targetStroke
 		
 		if active then
@@ -1743,7 +1746,6 @@ local function updateUI()
 		if targetBg then TweenService:Create(blip, ti, {BackgroundColor3 = targetBg}):Play() end
 		if stroke and targetStroke then TweenService:Create(stroke, ti, {Color = targetStroke}):Play() end
 		if elev then TweenService:Create(elev, ti, {TextColor3 = targetColor}):Play() end
-		if vec then TweenService:Create(vec, ti, {BackgroundColor3 = targetColor}):Play() end
 	end
 	
 	for _, item in ipairs(toggleList) do 
@@ -1903,11 +1905,9 @@ local function startYellowTransition()
 	for _, blip in pairs(cachedBlips) do
 		local stroke = blip:FindFirstChildOfClass("UIStroke")
 		local elev = blip:FindFirstChild("ElevTag")
-		local vec = blip:FindFirstChild("VecLine")
 		table.insert(yellowTweens, TweenService:Create(blip, ti, {BackgroundColor3 = colorWarn}))
 		if stroke then table.insert(yellowTweens, TweenService:Create(stroke, ti, {Color = colorWarn})) end
 		if elev then table.insert(yellowTweens, TweenService:Create(elev, ti, {TextColor3 = colorWarn})) end
-		if vec then table.insert(yellowTweens, TweenService:Create(vec, ti, {BackgroundColor3 = colorWarn})) end
 	end
 	
 	for _, item in ipairs(toggleList) do 
@@ -2087,17 +2087,6 @@ local function getOrCreateBlip(target, blipType)
 	elevTag.Visible = false
 	elevTag.ZIndex = 6
 	elevTag.Parent = blip
-
-	local vecLine = Instance.new("Frame")
-	vecLine.Name = "VecLine"
-	vecLine.Size = UDim2.new(0, 1, 0, 6)
-	vecLine.Position = UDim2.new(0.5, 0, 0.5, 0)
-	vecLine.AnchorPoint = Vector2.new(0.5, 1)
-	vecLine.BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE
-	vecLine.BorderSizePixel = 0
-	vecLine.Visible = false
-	vecLine.ZIndex = 5
-	vecLine.Parent = blip
 	
 	if active then
 		if blipType == "Twisted" then
@@ -2153,6 +2142,14 @@ local function executeRadarTick()
 
 	local function processTarget(targetObj, blipType)
 		if not targetObj or not targetObj.Parent then return end
+		
+		if blipType == "Machine" then
+			local prompt = targetObj:FindFirstChildWhichIsA("ProximityPrompt", true)
+			if prompt and not prompt.Enabled then
+				return
+			end
+		end
+
 		local part = targetObj:IsA("Model") and (targetObj:FindFirstChild("HumanoidRootPart") or targetObj.PrimaryPart or targetObj:FindFirstChildWhichIsA("BasePart")) or (targetObj:IsA("BasePart") and targetObj or nil)
 		if not part then return end
 
@@ -2213,24 +2210,6 @@ local function executeRadarTick()
 					end
 				else
 					elev.Visible = false
-				end
-			end
-
-			local vec = blip:FindFirstChild("VecLine")
-			if vec then
-				if toggleStates.Advanced_Radar and not isClamped and (blipType == "Twisted" or blipType == "Player") then
-					local vel = part.AssemblyLinearVelocity
-					local velFlat = Vector2.new(vel.X, vel.Z)
-					if velFlat.Magnitude > 1.5 then
-						local headingRel = myCFrame:VectorToObjectSpace(Vector3.new(vel.X, 0, vel.Z).Unit)
-						local hAngle = math.deg(math.atan2(headingRel.X, -headingRel.Z))
-						vec.Rotation = hAngle
-						vec.Visible = true
-					else
-						vec.Visible = false
-					end
-				else
-					vec.Visible = false
 				end
 			end
 
