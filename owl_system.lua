@@ -203,7 +203,7 @@ local toggleStates = {
 	Auto_Escape = false,
 	Advanced_Radar = false,
 	Hide_Radar = false,
-	Config_Editor = false
+	Editor = false
 }
 
 local TrackedEntities = {
@@ -923,7 +923,7 @@ radarWrapper.InputChanged:Connect(function(input)
 end)
 
 local configEditorFrame = Instance.new("Frame")
-configEditorFrame.Size = UDim2.new(0, 150, 0, 135)
+configEditorFrame.Size = UDim2.new(0, 150, 0, 115)
 configEditorFrame.Position = UDim2.new(1, -300, 0, 24)
 configEditorFrame.BackgroundColor3 = COLOR_BG
 configEditorFrame.BorderSizePixel = 0
@@ -951,7 +951,7 @@ local configTitle = Instance.new("TextLabel")
 configTitle.Size = UDim2.new(1, -12, 0, 16)
 configTitle.Position = UDim2.new(0, 6, 0, 3)
 configTitle.BackgroundTransparency = 1
-configTitle.Text = "// CONFIG EDITOR //"
+configTitle.Text = "// EDITOR //"
 configTitle.TextColor3 = COLOR_INACTIVE
 configTitle.Font = Enum.Font.Code
 configTitle.TextSize = 9
@@ -975,7 +975,7 @@ configScroll.BackgroundTransparency = 1
 configScroll.BorderSizePixel = 0
 configScroll.ScrollBarThickness = 2
 configScroll.ScrollBarImageColor3 = COLOR_INACTIVE
-configScroll.CanvasSize = UDim2.new(0, 0, 0, 100)
+configScroll.CanvasSize = UDim2.new(0, 0, 0, 80)
 configScroll.ZIndex = 12
 configScroll.Parent = configEditorFrame
 
@@ -1518,7 +1518,7 @@ local function executeToggleLogic(id, state)
 	elseif id == "Player_ESP" then if state then scanAndApplyESP() else removeESPType("Player") end
 	elseif id == "Stat_HUD" then statHudFrame.Visible = state
 	elseif id == "Instant_Interact" then updateProximityPrompts()
-	elseif id == "Config_Editor" then configEditorFrame.Visible = state
+	elseif id == "Editor" then configEditorFrame.Visible = state
 	elseif id == "Advanced_Radar" then
 		if not state then
 			threatRingStroke.Transparency = 1
@@ -1832,7 +1832,7 @@ createToggle("Instant_Interact", "Instant_Interact", 7)
 createToggle("Auto_Escape", "Auto_Escape", 8)
 createToggle("Advanced_Radar", "Advanced_Radar", 9)
 createToggle("Hide_Radar", "Hide_Radar", 10)
-createToggle("Config_Editor", "Config_Editor", 11)
+createToggle("Editor", "Editor", 11)
 
 local fadeTweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
 local cachedBlips = {} 
