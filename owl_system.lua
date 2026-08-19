@@ -494,6 +494,17 @@ zeroText.TextWrapped = true
 zeroText.ZIndex = 16
 zeroText.Parent = zeroWrapper
 
+local soundSonarStart = Instance.new("Sound")
+soundSonarStart.SoundId = "rbxassetid://108463235109016"
+soundSonarStart.Volume = 0.55
+soundSonarStart.Parent = zeroWrapper
+
+local soundTypewriter = Instance.new("Sound")
+soundTypewriter.SoundId = "rbxassetid://128333756908969"
+soundTypewriter.Volume = 0.25
+soundTypewriter.PlaybackSpeed = 1.0
+soundTypewriter.Parent = zeroWrapper
+
 local chatQueue = {}
 local isChatting = false
 local chatHideTween = nil
@@ -516,6 +527,8 @@ local function processChat()
 	if chatHideTween then chatHideTween:Cancel() end
 	updateZeroUIState(true)
 	
+	pcall(function() soundSonarStart:Play() end)
+	
 	local message = chatQueue[1]
 	table.remove(chatQueue, 1)
 	
@@ -525,6 +538,12 @@ local function processChat()
 	for i = 1, #message do
 		if shuttingDown then break end
 		zeroText.Text = string.sub(message, 1, i)
+		if i % 2 == 0 then
+			pcall(function()
+				soundTypewriter.PlaybackSpeed = math.random(95, 110) / 100
+				soundTypewriter:Play()
+			end)
+		end
 		task.wait(charWait)
 	end
 	
@@ -954,7 +973,7 @@ configScroll.BackgroundTransparency = 1
 configScroll.BorderSizePixel = 0
 configScroll.ScrollBarThickness = 2
 configScroll.ScrollBarImageColor3 = COLOR_INACTIVE
-configScroll.CanvasSize = UDim2.new(0, 0, 0, 80)
+configScroll.CanvasSize = UDim2.new(0, 0, 0, 60)
 configScroll.ZIndex = 12
 configScroll.Parent = configEditorFrame
 
