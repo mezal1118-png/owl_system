@@ -909,11 +909,14 @@ soundOn.SoundId = "rbxassetid://6895079853"
 soundOn.Volume = 0.5
 soundOn.Parent = mainFrame
 
-local soundOff = Instance.new("Sound")
-soundOff.SoundId = "rbxassetid://6895079853"
-soundOff.PlaybackSpeed = 0.8
-soundOff.Volume = 0.5
-soundOff.Parent = mainFrame
+local soundOff = Instance.new("SoundOff")
+pcall(function()
+	soundOff = Instance.new("Sound")
+	soundOff.SoundId = "rbxassetid://6895079853"
+	soundOff.PlaybackSpeed = 0.8
+	soundOff.Volume = 0.5
+	soundOff.Parent = mainFrame
+end)
 
 local outerStroke = Instance.new("UIStroke")
 outerStroke.Thickness = 1.5
@@ -1721,8 +1724,8 @@ local function updateUI()
 		
 		if active then
 			if blip.Name == "Twisted" then
-				targetBg = Color3.fromRGB(0, 0, 0)
-				targetStroke = COLOR_ACTIVE
+				targetBg = Color3.fromRGB(210, 160, 255)
+				targetStroke = Color3.fromRGB(255, 255, 255)
 			elseif blip.Name == "Player" then
 				targetBg = Color3.fromRGB(255, 255, 255)
 				targetStroke = COLOR_ACTIVE
@@ -2090,8 +2093,8 @@ local function getOrCreateBlip(target, blipType)
 	
 	if active then
 		if blipType == "Twisted" then
-			blip.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
-			stroke.Color = COLOR_ACTIVE
+			blip.BackgroundColor3 = Color3.fromRGB(210, 160, 255)
+			stroke.Color = Color3.fromRGB(255, 255, 255)
 		elseif blipType == "Player" then
 			blip.BackgroundColor3 = Color3.fromRGB(255, 255, 255) 
 			stroke.Color = COLOR_ACTIVE
@@ -2232,14 +2235,15 @@ local function executeRadarTick()
 				sonarPingSound:Play()
 			end
 
-			local baseTrans = isOccluded and 0.5 or 0
+			local baseTrans = isOccluded and 0.25 or 0
+			local maxFadeTrans = isOccluded and 0.45 or 0.35
 			local str = blip:FindFirstChildOfClass("UIStroke")
 			if isSwept then
 				blip.BackgroundTransparency = baseTrans
 				if str then str.Transparency = baseTrans end
 			else
-				blip.BackgroundTransparency = math.clamp(blip.BackgroundTransparency + 0.04, baseTrans, 0.35 + baseTrans)
-				if str then str.Transparency = math.clamp(str.Transparency + 0.04, baseTrans, 0.5 + baseTrans) end
+				blip.BackgroundTransparency = math.clamp(blip.BackgroundTransparency + 0.04, baseTrans, maxFadeTrans)
+				if str then str.Transparency = math.clamp(str.Transparency + 0.04, baseTrans, maxFadeTrans) end
 			end
 		end
 	end
