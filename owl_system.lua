@@ -145,6 +145,8 @@ local toggleList = {}
 
 local lastStatUpdate, lastEscapeTap = 0, 0
 local escapeToggleKey = false
+local radarRange = 150
+local lastPingTick = 0
 
 local MonsterList = {
 	"Yatta", "Boxten", "Shelly", "Dandy", "Dyle", "Poppy", "Squirm", "Tisha", "Shrimpo",
@@ -358,8 +360,7 @@ local DialogueLines = {
 		"I suppose keeping you alive is slightly better than smelling you rot.",
 		"Wow. Full health. The twisteds are going to love you.",
 		"You finally stopped bleeding. Try to keep it that way.",
-		"Healing complete. I'll change your status from 'dying' to 'about to die'.",
-		"You fixed yourself. I'd clap, but I don't care enough."
+		"Healing complete. I'll change your status from 'dying' to 'about to die'."
 	},
 	Casual = {
 		"Do you ever wonder what's under the floor? You shouldn't look.",
@@ -653,6 +654,12 @@ radarFrame.ZIndex = 1
 radarFrame.ClipsDescendants = true 
 radarFrame.Parent = radarWrapper
 
+local sonarPingSound = Instance.new("Sound")
+sonarPingSound.SoundId = "rbxassetid://9114223170"
+sonarPingSound.Volume = 0.35
+sonarPingSound.PlaybackSpeed = 1.2
+sonarPingSound.Parent = radarFrame
+
 local radarCorner = Instance.new("UICorner")
 radarCorner.CornerRadius = UDim.new(1, 0)
 radarCorner.Parent = radarFrame
@@ -801,6 +808,36 @@ threatRingStroke.Thickness = 1
 threatRingStroke.Transparency = 1
 threatRingStroke.Parent = threatRing
 
+local phosphorTrails = {}
+for i = 1, 3 do
+	local trailPivot = Instance.new("Frame")
+	trailPivot.Size = UDim2.new(1, 0, 1, 0)
+	trailPivot.Position = UDim2.new(0.5, 0, 0.5, 0)
+	trailPivot.AnchorPoint = Vector2.new(0.5, 0.5)
+	trailPivot.BackgroundTransparency = 1
+	trailPivot.ZIndex = 3
+	trailPivot.Visible = false
+	trailPivot.Parent = radarFrame
+
+	local trailBar = Instance.new("Frame")
+	trailBar.Size = UDim2.new(0.5, 0, 0, 2)
+	trailBar.Position = UDim2.new(0.5, 0, 0.5, 0)
+	trailBar.AnchorPoint = Vector2.new(0, 0.5)
+	trailBar.BackgroundColor3 = COLOR_INACTIVE
+	trailBar.BackgroundTransparency = 0.35 + (i * 0.2)
+	trailBar.BorderSizePixel = 0
+	trailBar.ZIndex = 3
+	trailBar.Parent = trailPivot
+
+	local trailGrad = Instance.new("UIGradient")
+	trailGrad.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.95),
+		NumberSequenceKeypoint.new(1, 0)
+	})
+	trailGrad.Parent = trailBar
+	table.insert(phosphorTrails, {pivot = trailPivot, bar = trailBar, offset = i * 4.5})
+end
+
 local scannerPivot = Instance.new("Frame")
 scannerPivot.Size = UDim2.new(1, 0, 1, 0)
 scannerPivot.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -844,6 +881,141 @@ radarBlips.Size = UDim2.new(1, 0, 1, 0)
 radarBlips.BackgroundTransparency = 1
 radarBlips.ZIndex = 4
 radarBlips.Parent = radarFrame
+
+radarWrapper.InputChanged:Connect(function(input)
+	if toggleStates.Advanced_Radar and input.UserInputType == Enum.UserInputType.MouseWheel then
+		if input.Position.Z > 0 then
+			radarRange = math.clamp(radarRange - 25, 75, 250)
+		else
+			radarRange = math.clamp(radarRange + 25, 75, 250)
+		end
+	end
+end)
+
+local blipPool = {}
+local function createPooledBlip()
+	local blip = Instance.new("Frame")
+	blip.Size = UDim2.new(0, 5, 0, 5)
+	blip.AnchorPoint = Vector2.new(0.5, 0.5)
+	blip.BorderSizePixel = 0
+	blip.Visible = false
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(1, 0)
+	corner.Parent = blip
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 1
+	stroke.Parent = blip
+
+	local elevTag = Instance.new("TextLabel")
+	elevTag.Name = "ElevTag"
+	elevTag.Size = UDim2.new(0, 10, 0, 10)
+	elevTag.Position = UDim2.new(0.5, 0, 0, -8)
+	elevTag.AnchorPoint = Vector2.new(0.5, 0.5)
+	elevTag.BackgroundTransparency = 1
+	elevTag.Text = ""
+	elevTag.TextColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE
+	elevTag.Font = Enum.Font.Code
+	elevTag.TextSize = 8
+	elevTag.Visible = false
+	elevTag.ZIndex = 6
+	elevTag.Parent = blip
+
+	local vecLine = Instance.new("Frame")
+	vecLine.Name = "VecLine"
+	vecLine.Size = UDim2.new(0, 1, 0, 6)
+	vecLine.Position = UDim2.new(0.5, 0, 0.5, 0)
+	vecLine.AnchorPoint = Vector2.new(0.5, 1)
+	vecLine.BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE
+	vecLine.BorderSizePixel = 0
+	vecLine.Visible = false
+	vecLine.ZIndex = 5
+	vecLine.Parent = blip
+
+	blip.Parent = radarBlips
+	table.insert(blipPool, blip)
+	return blip
+end
+
+for _ = 1, 25 do
+	createPooledBlip()
+end
+
+local function acquireBlip(target, blipType)
+	if cachedBlips[target] then return cachedBlips[target] end
+	local blip = nil
+	for _, b in ipairs(blipPool) do
+		if not b.Visible then
+			blip = b
+			break
+		end
+	end
+	if not blip then
+		blip = createPooledBlip()
+	end
+
+	blip.Name = blipType
+	blip.Visible = true
+
+	local corner = blip:FindFirstChildOfClass("UICorner")
+	local stroke = blip:FindFirstChildOfClass("UIStroke")
+
+	if toggleStates.Advanced_Radar then
+		if blipType == "Machine" then
+			if corner then corner.CornerRadius = UDim.new(0, 0) end
+			blip.Rotation = 45
+		elseif blipType == "Player" then
+			if corner then corner.CornerRadius = UDim.new(0, 1) end
+			blip.Rotation = 0
+		else
+			if corner then corner.CornerRadius = UDim.new(1, 0) end
+			blip.Rotation = 0
+		end
+	else
+		if corner then corner.CornerRadius = UDim.new(1, 0) end
+		blip.Rotation = 0
+	end
+
+	if active then
+		if blipType == "Twisted" then
+			blip.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+			if stroke then stroke.Color = COLOR_ACTIVE end
+		elseif blipType == "Player" then
+			blip.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+			if stroke then stroke.Color = COLOR_ACTIVE end
+		elseif blipType == "Machine" then
+			blip.BackgroundColor3 = COLOR_ACTIVE
+			if stroke then stroke.Color = Color3.fromRGB(0, 0, 0) end
+		end
+	else
+		if blipType == "Twisted" then
+			blip.BackgroundColor3 = Color3.fromRGB(130, 130, 130)
+			if stroke then stroke.Color = Color3.fromRGB(255, 255, 255) end
+		elseif blipType == "Player" then
+			blip.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+			if stroke then stroke.Color = Color3.fromRGB(0, 0, 0) end
+		elseif blipType == "Machine" then
+			blip.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+			if stroke then stroke.Color = Color3.fromRGB(255, 255, 255) end
+		end
+	end
+
+	cachedBlips[target] = blip
+	return blip
+end
+
+local function releaseBlip(target)
+	local blip = cachedBlips[target]
+	if blip then
+		blip.Visible = false
+		local elev = blip:FindFirstChild("ElevTag")
+		if elev then elev.Visible = false end
+		local vec = blip:FindFirstChild("VecLine")
+		if vec then vec.Visible = false end
+		cachedBlips[target] = nil
+	end
+end
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 124, 0, 72)
@@ -1305,6 +1477,13 @@ local function executeToggleLogic(id, state)
 	elseif id == "Advanced_Radar" then
 		if not state then
 			threatRingStroke.Transparency = 1
+			for _, trail in ipairs(phosphorTrails) do
+				trail.pivot.Visible = false
+			end
+		else
+			for _, trail in ipairs(phosphorTrails) do
+				trail.pivot.Visible = true
+			end
 		end
 	end
 end
@@ -1610,7 +1789,6 @@ createToggle("Advanced_Radar", "Advanced_Radar", 9)
 createToggle("Hide_Radar", "Hide_Radar", 10)
 
 local fadeTweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-local cachedBlips = {} 
 
 local function updateUI()
 	if shuttingDown then return end
@@ -1638,6 +1816,7 @@ local function updateUI()
 	TweenService:Create(crossV, ti, {BackgroundColor3 = targetColor}):Play()
 	TweenService:Create(crossH, ti, {BackgroundColor3 = targetColor}):Play()
 	TweenService:Create(radarScanner, ti, {BackgroundColor3 = targetColor}):Play()
+	for _, trail in ipairs(phosphorTrails) do TweenService:Create(trail.bar, ti, {BackgroundColor3 = targetColor}):Play() end
 	TweenService:Create(radarCenter, ti, {BackgroundColor3 = targetColor}):Play()
 	TweenService:Create(toggleContainer, ti, {ScrollBarImageColor3 = targetColor}):Play()
 	for _, rStroke in ipairs(radarRings) do TweenService:Create(rStroke, ti, {Color = targetColor}):Play() end
@@ -1655,9 +1834,10 @@ local function updateUI()
 		end
 	end
 
-	for _, blip in pairs(cachedBlips) do
+	for _, blip in ipairs(blipPool) do
 		local stroke = blip:FindFirstChildOfClass("UIStroke")
 		local elev = blip:FindFirstChild("ElevTag")
+		local vec = blip:FindFirstChild("VecLine")
 		local targetBg, targetStroke
 		
 		if active then
@@ -1687,6 +1867,7 @@ local function updateUI()
 		if targetBg then TweenService:Create(blip, ti, {BackgroundColor3 = targetBg}):Play() end
 		if stroke and targetStroke then TweenService:Create(stroke, ti, {Color = targetStroke}):Play() end
 		if elev then TweenService:Create(elev, ti, {TextColor3 = targetColor}):Play() end
+		if vec then TweenService:Create(vec, ti, {BackgroundColor3 = targetColor}):Play() end
 	end
 	
 	for _, item in ipairs(toggleList) do 
@@ -1827,6 +2008,7 @@ local function startYellowTransition()
 	table.insert(yellowTweens, TweenService:Create(crossV, ti, {BackgroundColor3 = colorWarn}))
 	table.insert(yellowTweens, TweenService:Create(crossH, ti, {BackgroundColor3 = colorWarn}))
 	table.insert(yellowTweens, TweenService:Create(radarScanner, ti, {BackgroundColor3 = colorWarn}))
+	for _, trail in ipairs(phosphorTrails) do table.insert(yellowTweens, TweenService:Create(trail.bar, ti, {BackgroundColor3 = colorWarn})) end
 	table.insert(yellowTweens, TweenService:Create(radarCenter, ti, {BackgroundColor3 = colorWarn}))
 	for _, rStroke in ipairs(radarRings) do table.insert(yellowTweens, TweenService:Create(rStroke, ti, {Color = colorWarn})) end
 	
@@ -1842,12 +2024,14 @@ local function startYellowTransition()
 		}))
 	end
 
-	for _, blip in pairs(cachedBlips) do
+	for _, blip in ipairs(blipPool) do
 		local stroke = blip:FindFirstChildOfClass("UIStroke")
 		local elev = blip:FindFirstChild("ElevTag")
+		local vec = blip:FindFirstChild("VecLine")
 		table.insert(yellowTweens, TweenService:Create(blip, ti, {BackgroundColor3 = colorWarn}))
 		if stroke then table.insert(yellowTweens, TweenService:Create(stroke, ti, {Color = colorWarn})) end
 		if elev then table.insert(yellowTweens, TweenService:Create(elev, ti, {TextColor3 = colorWarn})) end
+		if vec then table.insert(yellowTweens, TweenService:Create(vec, ti, {BackgroundColor3 = colorWarn})) end
 	end
 	
 	for _, item in ipairs(toggleList) do 
@@ -1980,10 +2164,7 @@ table.insert(connections, workspace.DescendantRemoving:Connect(function(desc)
 		TrackedEntities.Prompts[desc] = nil
 		EnvironmentSnapshot.Prompts[desc] = nil
 	end
-	if cachedBlips[desc] then
-		cachedBlips[desc]:Destroy()
-		cachedBlips[desc] = nil
-	end
+	releaseBlip(desc)
 end))
 
 for _, desc in ipairs(workspace:GetDescendants()) do
@@ -1994,64 +2175,9 @@ updateUI()
 scanAndApplyESP()
 updateProximityPrompts()
 
-local function getOrCreateBlip(target, blipType)
-	if cachedBlips[target] then return cachedBlips[target] end
-	local blip = Instance.new("Frame")
-	blip.Name = blipType
-	blip.Size = UDim2.new(0, 5, 0, 5)
-	blip.AnchorPoint = Vector2.new(0.5, 0.5) 
-	blip.BorderSizePixel = 0
-	
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(1, 0)
-	corner.Parent = blip
-	
-	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 1
-	stroke.Parent = blip
-
-	local elevTag = Instance.new("TextLabel")
-	elevTag.Name = "ElevTag"
-	elevTag.Size = UDim2.new(0, 10, 0, 10)
-	elevTag.Position = UDim2.new(0.5, 0, 0, -8)
-	elevTag.AnchorPoint = Vector2.new(0.5, 0.5)
-	elevTag.BackgroundTransparency = 1
-	elevTag.Text = ""
-	elevTag.TextColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE
-	elevTag.Font = Enum.Font.Code
-	elevTag.TextSize = 8
-	elevTag.Visible = false
-	elevTag.ZIndex = 6
-	elevTag.Parent = blip
-	
-	if active then
-		if blipType == "Twisted" then
-			blip.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
-			stroke.Color = COLOR_ACTIVE
-		elseif blipType == "Player" then
-			blip.BackgroundColor3 = Color3.fromRGB(255, 255, 255) 
-			stroke.Color = COLOR_ACTIVE
-		elseif blipType == "Machine" then
-			blip.BackgroundColor3 = COLOR_ACTIVE 
-			stroke.Color = Color3.fromRGB(0, 0, 0)
-		end
-	else
-		if blipType == "Twisted" then
-			blip.BackgroundColor3 = Color3.fromRGB(130, 130, 130) 
-			stroke.Color = Color3.fromRGB(255, 255, 255)
-		elseif blipType == "Player" then
-			blip.BackgroundColor3 = Color3.fromRGB(255, 255, 255) 
-			stroke.Color = Color3.fromRGB(0, 0, 0)
-		elseif blipType == "Machine" then
-			blip.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
-			stroke.Color = Color3.fromRGB(255, 255, 255)
-		end
-	end
-
-	blip.Parent = radarBlips
-	cachedBlips[target] = blip
-	return blip
-end
+local losParams = RaycastParams.new()
+losParams.FilterType = Enum.RaycastFilterType.Exclude
+losParams.IgnoreWater = true
 
 local function executeRadarTick()
 	if shuttingDown then return end 
@@ -2070,9 +2196,12 @@ local function executeRadarTick()
 	end
 
 	local myCFrame = CFrame.lookAt(hrp.Position, hrp.Position + flatLook)
-	local maxRange, radius = 150, 59
+	local radius = 59
+	local maxRangeSq = radarRange * radarRange
 	local seenTargets = {}
 	local nearestTwistedDistSq = math.huge
+
+	losParams.FilterDescendantsInstances = {player.Character}
 
 	local function processTarget(targetObj, blipType)
 		if not targetObj or not targetObj.Parent then return end
@@ -2081,7 +2210,6 @@ local function executeRadarTick()
 
 		local relativePos = myCFrame:PointToObjectSpace(part.Position)
 		local dist2DSq = (relativePos.X * relativePos.X) + (relativePos.Z * relativePos.Z)
-		local maxRangeSq = maxRange * maxRange
 		
 		if blipType == "Twisted" and dist2DSq < nearestTwistedDistSq then
 			nearestTwistedDistSq = dist2DSq
@@ -2089,24 +2217,25 @@ local function executeRadarTick()
 
 		if dist2DSq <= maxRangeSq or toggleStates.Advanced_Radar then
 			seenTargets[targetObj] = true
-			local blip = getOrCreateBlip(targetObj, blipType)
+			local blip = acquireBlip(targetObj, blipType)
 			local dist2D = math.sqrt(dist2DSq)
 			local rX, rY
+			local isClamped = false
 			
-			if dist2D <= maxRange then
-				rX = (relativePos.X / maxRange) * radius
-				rY = (relativePos.Z / maxRange) * radius
+			if dist2D <= radarRange then
+				rX = (relativePos.X / radarRange) * radius
+				rY = (relativePos.Z / radarRange) * radius
 			else
-				local clampedDist = radius - 2
-				rX = (relativePos.X / dist2D) * clampedDist
-				rY = (relativePos.Z / dist2D) * clampedDist
+				isClamped = true
+				rX = (relativePos.X / dist2D) * radius
+				rY = (relativePos.Z / dist2D) * radius
 			end
 			
 			blip.Position = UDim2.new(0.5, rX, 0.5, rY)
 
 			local elev = blip:FindFirstChild("ElevTag")
 			if elev then
-				if toggleStates.Advanced_Radar and dist2D <= maxRange then
+				if toggleStates.Advanced_Radar and not isClamped then
 					local dy = part.Position.Y - hrp.Position.Y
 					if dy > 6 then
 						elev.Text = "▲"
@@ -2122,21 +2251,51 @@ local function executeRadarTick()
 				end
 			end
 
+			local vec = blip:FindFirstChild("VecLine")
+			if vec then
+				if toggleStates.Advanced_Radar and not isClamped and (blipType == "Twisted" or blipType == "Player") then
+					local vel = part.AssemblyLinearVelocity
+					local velFlat = Vector3.new(vel.X, 0, vel.Z)
+					if velFlat.Magnitude > 1.5 then
+						local headingRel = myCFrame:VectorToObjectSpace(velFlat.Unit)
+						local hAngle = math.deg(math.atan2(headingRel.X, -headingRel.Z))
+						vec.Rotation = hAngle
+						vec.Visible = true
+					else
+						vec.Visible = false
+					end
+				else
+					vec.Visible = false
+				end
+			end
+
+			local isOccluded = false
+			if toggleStates.Advanced_Radar and not isClamped then
+				local rayDir = part.Position - hrp.Position
+				local rayHit = workspace:Raycast(hrp.Position, rayDir, losParams)
+				if rayHit and not rayHit.Instance:IsDescendantOf(targetObj) then
+					isOccluded = true
+				end
+			end
+
 			local blipAngle = (math.deg(math.atan2(rY, rX)) + 360) % 360
 			local scanAngle = scannerPivot.Rotation % 360
 			local angleDiff = math.abs(blipAngle - scanAngle)
-			
+			local isSwept = (angleDiff < 14 or angleDiff > 346)
+
+			if isSwept and toggleStates.Advanced_Radar and blipType == "Twisted" and dist2DSq <= 900 and tick() - lastPingTick > 0.6 then
+				lastPingTick = tick()
+				sonarPingSound:Play()
+			end
+
+			local baseTrans = isOccluded and 0.45 or 0
 			local str = blip:FindFirstChildOfClass("UIStroke")
-			if angleDiff < 14 or angleDiff > 346 then
-				blip.BackgroundTransparency = 0
-				if str then
-					str.Transparency = 0
-				end
+			if isSwept then
+				blip.BackgroundTransparency = baseTrans
+				if str then str.Transparency = baseTrans end
 			else
-				blip.BackgroundTransparency = math.clamp(blip.BackgroundTransparency + 0.04, 0, 0.35)
-				if str then
-					str.Transparency = math.clamp(str.Transparency + 0.04, 0, 0.5)
-				end
+				blip.BackgroundTransparency = math.clamp(blip.BackgroundTransparency + 0.04, baseTrans, 0.35 + baseTrans)
+				if str then str.Transparency = math.clamp(str.Transparency + 0.04, baseTrans, 0.5 + baseTrans) end
 			end
 		end
 	end
@@ -2153,15 +2312,14 @@ local function executeRadarTick()
 
 	if toggleStates.Advanced_Radar and nearestTwistedDistSq <= 625 then
 		local pulse = (math.sin(tick() * 10) + 1) * 0.5
-		threatRingStroke.Transparency = pulse * 0.7
+		threatRingStroke.Transparency = 0.65 + (pulse * 0.3)
 	else
 		threatRingStroke.Transparency = 1
 	end
 
-	for obj, blip in pairs(cachedBlips) do
+	for obj in pairs(cachedBlips) do
 		if not seenTargets[obj] then
-			blip:Destroy()
-			cachedBlips[obj] = nil
+			releaseBlip(obj)
 		end
 	end
 end
@@ -2179,7 +2337,13 @@ table.insert(connections, RunService.RenderStepped:Connect(function()
 		return
 	else
 		radarWrapper.Visible = not toggleStates.Hide_Radar
-		scannerPivot.Rotation = (tick() * 150) % 360
+		local currentAngle = (tick() * 150) % 360
+		scannerPivot.Rotation = currentAngle
+		if toggleStates.Advanced_Radar then
+			for _, trail in ipairs(phosphorTrails) do
+				trail.pivot.Rotation = (currentAngle - trail.offset) % 360
+			end
+		end
 	end
 
 	executeRadarTick()
