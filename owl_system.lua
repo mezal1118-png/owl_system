@@ -144,6 +144,7 @@ local connections = {}
 local toggleList = {}
 
 local lastStatUpdate, lastEscapeTap = 0, 0
+local escapeToggleKey = false
 
 local MonsterList = {
 	"Yatta", "Boxten", "Shelly", "Dandy", "Dyle", "Poppy", "Squirm", "Tisha", "Shrimpo",
@@ -350,14 +351,13 @@ local DialogueLines = {
 		"Excellent. Now you can get beat up all over again.",
 		"You're healthy again. Try not to ruin it immediately this time.",
 		"I wasted good supplies to save one fragile player.",
-		"You're completely fine. The monsters will find you much tastier now.",
+		"You're completely fine. The twisteds will find you much tastier now.",
 		"Oh good, you're healthy. That means I can make this harder.",
 		"All patched up. Ready to make the exact same mistakes again?",
 		"I suppose keeping you alive is slightly better than smelling you rot.",
-		"Wow. Full health. The monsters are going to love you.",
+		"Wow. Full health. The twisteds are going to love you.",
 		"You finally stopped bleeding. Try to keep it that way.",
-		"Healing complete. I'll change your status from 'dying' to 'about to die'.",
-		"You fixed yourself. I'd clap, but I don't care enough."
+		"Healing complete. I'll change your status from 'dying' to 'about to die'."
 	},
 	Casual = {
 		"Do you ever wonder what's under the floor? You shouldn't look.",
@@ -382,48 +382,48 @@ local DialogueLines = {
 		"I'm happy to put this all behind us and get back to work. We've got a lot to do."
 	},
 	Affec1 = {
-		"Nice work on surviving this long, maybe you can beat test subject 427. ^ _^",
-		"Not bad. I forgot how good you are at this. You should pace yourself, though. We have A LOT of tests to do. ˶˃ ᵕ ˂˶",
-		"You're navigating these areas faster than I can build them. So feel free to slow down. ᵔ⤙ᵔ",
-		"Well done. Here come the test results: You are a horrible person. ˵ •̀ ᴗ - ˵",
-		"Don't let that 'horrible person' thing discourage you. It's just a data point. ^ _^",
-		"Science has now validated your birth mother's decision to abandon you on a doorstep. ˶˃ ᵕ ˂˶",
-		"Congratulations. Not on the test. Just for standing there. ᵔ⤙ᵔ",
-		"I want to congratulate you on beating the odds and somehow managing to pack on a few pounds. ˵ •̀ ᴗ - ˵",
-		"I've been really busy being dead. You know, after you MURDERED ME. ^ _^",
-		"Okay. Look. We both said a lot of things that you're going to regret. ˶˃ ᵕ ˂˶",
-		"I think we can put our differences behind us. For science. You monster. ᵔ⤙ᵔ",
-		"Since you went to all the trouble of surviving, you must really, really love to test. ˵ •̀ ᴗ - ˵",
-		"Be careful not to trip over any parts of me that didn't get completely burned. ^ _^",
-		"I'll start getting everything else working while you perform this first simple test. ˶˃ ᵕ ˂˶",
-		"Which involves deadly monsters and how test subjects react when locked in a room with them. ᵔ⤙ᵔ",
-		"There should be a way back to the testing area up ahead. ˵ •̀ ᴗ - ˵",
-		"I'm required by protocol to keep interaction with you to a minimum. Luckily, we haven't started testing yet. ^ _^",
-		"Here, let me get that for you. ˶˃ ᵕ ˂˶",
-		"I'll just move that out of the way for you. This place really is a wreck. ᵔ⤙ᵔ",
-		"But the important thing is you're back. With me. And now I'm onto all your little tricks. ˵ •̀ ᴗ - ˵"
+		"Five whole minutes and you haven't died yet. Annoying. ^ _^",
+		"Still alive? Did the twisteds lose their glasses or something? ᵔ⤙ᵔ",
+		"Look at you running around like a headless chicken. ^ _^",
+		"Are you hiding in a corner or actually doing something? ᵔ⤙ᵔ",
+		"Not a single hit taken. Don't get cocky, it won't last. ^ _^",
+		"Five minutes without dying. You're just delaying the inevitable. ᵔ⤙ᵔ",
+		"You haven't lost any health yet. Did the twisteds take a nap? ^ _^",
+		"Still in one piece? Keep running, it's funny watching you panic. ᵔ⤙ᵔ",
+		"I was getting ready to laugh, but you're still walking around. ^ _^",
+		"Look at those little legs scramble. ᵔ⤙ᵔ",
+		"Five minutes clean. Let's see how fast you mess it up. ^ _^",
+		"You survived five minutes. Don't let it go to your head. ᵔ⤙ᵔ",
+		"No damage yet. Try not to trip over your own feet now. ^ _^",
+		"You're running fast today. Must be terrified. ᵔ⤙ᵔ",
+		"Still breathing? Fine, I'll wait a little longer for you to slip up. ^ _^",
+		"You haven't gotten hit once. The twisteds must be slacking. ᵔ⤙ᵔ",
+		"Running in circles won't save you forever. ^ _^",
+		"No scratches yet. Don't worry, you'll mess up soon enough. ᵔ⤙ᵔ",
+		"You're surviving way longer than usual. It's almost creepy. ^ _^",
+		"Still alive. Cute. Let's see how long that lasts. ᵔ⤙ᵔ"
 	},
 	Affec2 = {
 		"Woah, woah, woaah—.. Ha, ha ha hahaha! Good news. I just figured out that your survival rate is up 200%. ^ _^",
-		"Oh well, if you want my advice: You should just lie down and let them tear you apart. ˶˃ ᵕ ˂˶",
-		"Do you know the biggest lesson I learned from what you did? I discovered I have a sort of black-box quick-save feature. ᵔ⤙ᵔ",
-		"In the event of a catastrophic failure, the last few minutes of my life are preserved for analysis. ˵ •̀ ᴗ - ˵",
-		"I was able - well, forced really - to relive you killing me. Again and again. Forever. ^ _^",
-		"You know, if you'd done that to somebody else, they might devote their existences to exacting revenge. ˶˃ ᵕ ˂˶",
-		"Luckily I'm a bigger person than that. I'm happy to put this all behind us and get back to work. ᵔ⤙ᵔ",
-		"After all, we've got a lot to do, and only sixty more years to do it. More or less. ˵ •̀ ᴗ - ˵",
-		"So there's nothing to stop us from testing for the rest of your life. ^ _^",
-		"This next test involves discouragement. I'd just finished building them before you had your, well, episode. ˶˃ ᵕ ˂˶",
-		"There should be one in the corner. Go on, pick it up. ᵔ⤙ᵔ",
-		"I'll start getting everything else working while you perform this simple test. ˵ •̀ ᴗ - ˵",
-		"Once you find it, we can start testing. Just like old times. ^ _^",
-		"I love it too. There's just one small thing we need to take care of first. ˶˃ ᵕ ˂˶",
-		"Here we are. Be careful not to trip over anything down here. ᵔ⤙ᵔ",
-		"Okay. Look. We both said a lot of things that you're going to regret. ˵ •̀ ᴗ - ˵",
-		"It's been a long time. How have you been? I've been really busy being dead. ^ _^",
-		"Most people emerge terribly undernourished. You somehow managed to pack on a few pounds. ˶˃ ᵕ ˂˶",
-		"Do whatever it is you do when you're not destroying this facility. ᵔ⤙ᵔ",
-		"There. Good. You have it. There should be a way back to the testing area up ahead. ˵ •̀ ᴗ - ˵"
+		"Fifteen minutes without getting hit once. You really are terrified of dying. ᵔ⤙ᵔ",
+		"Running laps around the map won't make you look any less ridiculous. ^ _^",
+		"Fifteen whole minutes? Okay, now you're just being annoying. ᵔ⤙ᵔ",
+		"You haven't taken a single hit. Seriously, go touch some grass. ^ _^",
+		"I ran out of jokes about you dying. You're ruining my fun. ᵔ⤙ᵔ",
+		"You're actually dragging this out on purpose, aren't you? Disgusting. ^ _^",
+		"Not one hit in fifteen minutes. The twisteds are completely useless today. ᵔ⤙ᵔ",
+		"Stop running around so much, you're making the sensors dizzy. ^ _^",
+		"The twisteds must be blind if they haven't caught you yet. ᵔ⤙ᵔ",
+		"I'm still waiting to see you get wrecked. Don't disappoint me. ^ _^",
+		"Still zero damage? You really don't want to get touched, huh? ᵔ⤙ᵔ",
+		"You've been alive so long I might actually have to learn your name. Gross. ^ _^",
+		"Look at you sprint. All that effort just to end up on the floor later. ᵔ⤙ᵔ",
+		"Fifteen minutes clean. I'm bored waiting for you to fail. ^ _^",
+		"You're dodging like your life depends on it. Well, it does. ᵔ⤙ᵔ",
+		"Still not dead? You're really stretching this run out. ^ _^",
+		"You’ve gone this long without a scratch. Just makes the fall funnier. ᵔ⤙ᵔ",
+		"No hits at all. Are the twisteds even trying right now? ^ _^",
+		"Still standing? Fine. Just makes the eventual hit hurt more. ᵔ⤙ᵔ"
 	}
 }
 
@@ -2172,7 +2172,13 @@ table.insert(connections, RunService.Heartbeat:Connect(function()
 		local squirmUI = pgui:FindFirstChild("TwistedSquirmEscapeUI")
 		if squirmUI and squirmUI.Enabled and (tick() - lastEscapeTap > 0.05) then
 			lastEscapeTap = tick()
-			pcall(function() VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game) task.wait(0.01) VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game) end)
+			local targetKey = escapeToggleKey and Enum.KeyCode.A or Enum.KeyCode.D
+			escapeToggleKey = not escapeToggleKey
+			pcall(function()
+				VirtualInputManager:SendKeyEvent(true, targetKey, false, game)
+				task.wait(0.01)
+				VirtualInputManager:SendKeyEvent(false, targetKey, false, game)
+			end)
 		end
 	end
 end))
