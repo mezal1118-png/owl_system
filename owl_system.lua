@@ -191,6 +191,7 @@ local toggleStates = {
 	Stat_HUD = false,
 	Instant_Interact = false,
 	Auto_Escape = false,
+	Advanced_Radar = false,
 	Hide_Radar = false
 }
 
@@ -357,7 +358,8 @@ local DialogueLines = {
 		"I suppose keeping you alive is slightly better than smelling you rot.",
 		"Wow. Full health. The twisteds are going to love you.",
 		"You finally stopped bleeding. Try to keep it that way.",
-		"Healing complete. I'll change your status from 'dying' to 'about to die'."
+		"Healing complete. I'll change your status from 'dying' to 'about to die'.",
+		"You fixed yourself. I'd clap, but I don't care enough."
 	},
 	Casual = {
 		"Do you ever wonder what's under the floor? You shouldn't look.",
@@ -396,7 +398,7 @@ local DialogueLines = {
 		"You survived five minutes. Don't let it go to your head. ᵔ⤙ᵔ",
 		"No damage yet. Try not to trip over your own feet now. ^ _^",
 		"You're running fast today. Must be terrified. ᵔ⤙ᵔ",
-		"Still breathing? Fine, I'll wait a little longer for you to slip up. ^ _^",
+		"Still breathing? Fine, I'll hold off on the trash talk for a bit. ^ _^",
 		"You haven't gotten hit once. The twisteds must be slacking. ᵔ⤙ᵔ",
 		"Running in circles won't save you forever. ^ _^",
 		"No scratches yet. Don't worry, you'll mess up soon enough. ᵔ⤙ᵔ",
@@ -780,6 +782,24 @@ for i = 1, 2 do
 	rStroke.Parent = ring
 	table.insert(radarRings, rStroke)
 end
+
+local threatRing = Instance.new("Frame")
+threatRing.Size = UDim2.new(0.35, 0, 0.35, 0)
+threatRing.Position = UDim2.new(0.5, 0, 0.5, 0)
+threatRing.AnchorPoint = Vector2.new(0.5, 0.5)
+threatRing.BackgroundTransparency = 1
+threatRing.ZIndex = 2
+threatRing.Parent = radarFrame
+
+local threatRingCorner = Instance.new("UICorner")
+threatRingCorner.CornerRadius = UDim.new(1, 0)
+threatRingCorner.Parent = threatRing
+
+local threatRingStroke = Instance.new("UIStroke")
+threatRingStroke.Color = Color3.fromRGB(255, 60, 60)
+threatRingStroke.Thickness = 1
+threatRingStroke.Transparency = 1
+threatRingStroke.Parent = threatRing
 
 local scannerPivot = Instance.new("Frame")
 scannerPivot.Size = UDim2.new(1, 0, 1, 0)
@@ -1282,6 +1302,10 @@ local function executeToggleLogic(id, state)
 	elseif id == "Player_ESP" then if state then scanAndApplyESP() else removeESPType("Player") end
 	elseif id == "Stat_HUD" then statHudFrame.Visible = state
 	elseif id == "Instant_Interact" then updateProximityPrompts()
+	elseif id == "Advanced_Radar" then
+		if not state then
+			threatRingStroke.Transparency = 1
+		end
 	end
 end
 
@@ -1582,7 +1606,8 @@ createToggle("Player_ESP", "Player_ESP", 5, nil, {title = "Player Display", tabl
 createToggle("Stat_HUD", "Stat_HUD", 6)
 createToggle("Instant_Interact", "Instant_Interact", 7)
 createToggle("Auto_Escape", "Auto_Escape", 8)
-createToggle("Hide_Radar", "Hide_Radar", 9)
+createToggle("Advanced_Radar", "Advanced_Radar", 9)
+createToggle("Hide_Radar", "Hide_Radar", 10)
 
 local fadeTweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
 local cachedBlips = {} 
@@ -1632,6 +1657,7 @@ local function updateUI()
 
 	for _, blip in pairs(cachedBlips) do
 		local stroke = blip:FindFirstChildOfClass("UIStroke")
+		local elev = blip:FindFirstChild("ElevTag")
 		local targetBg, targetStroke
 		
 		if active then
@@ -1660,6 +1686,7 @@ local function updateUI()
 
 		if targetBg then TweenService:Create(blip, ti, {BackgroundColor3 = targetBg}):Play() end
 		if stroke and targetStroke then TweenService:Create(stroke, ti, {Color = targetStroke}):Play() end
+		if elev then TweenService:Create(elev, ti, {TextColor3 = targetColor}):Play() end
 	end
 	
 	for _, item in ipairs(toggleList) do 
@@ -1683,7 +1710,7 @@ local function toggleExtension()
 	togglesOpen = not togglesOpen
 	local ti = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	if togglesOpen then
-		TweenService:Create(extendedFrame, ti, {Size = UDim2.new(1, 0, 0, 155)}):Play()
+		TweenService:Create(extendedFrame, ti, {Size = UDim2.new(1, 0, 0, 172)}):Play()
 		TweenService:Create(extOuterStroke, ti, {Transparency = 0, Color = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
 		TweenService:Create(extSideL, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
 		TweenService:Create(extSideR, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
@@ -1734,7 +1761,7 @@ local function toggleMinimize()
 		TweenService:Create(innerStroke, ti, {Transparency = active and 0.5 or 0.8}):Play()
 		TweenService:Create(bottomHeader, ti, {TextTransparency = 0}):Play()
 		if togglesOpen then
-			TweenService:Create(extendedFrame, ti, {Size = UDim2.new(1, 0, 0, 155)}):Play()
+			TweenService:Create(extendedFrame, ti, {Size = UDim2.new(1, 0, 0, 172)}):Play()
 			TweenService:Create(extOuterStroke, ti, {Transparency = 0}):Play()
 			TweenService:Create(extSideL, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
 			TweenService:Create(extSideR, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
@@ -1817,8 +1844,10 @@ local function startYellowTransition()
 
 	for _, blip in pairs(cachedBlips) do
 		local stroke = blip:FindFirstChildOfClass("UIStroke")
+		local elev = blip:FindFirstChild("ElevTag")
 		table.insert(yellowTweens, TweenService:Create(blip, ti, {BackgroundColor3 = colorWarn}))
 		if stroke then table.insert(yellowTweens, TweenService:Create(stroke, ti, {Color = colorWarn})) end
+		if elev then table.insert(yellowTweens, TweenService:Create(elev, ti, {TextColor3 = colorWarn})) end
 	end
 	
 	for _, item in ipairs(toggleList) do 
@@ -1980,6 +2009,20 @@ local function getOrCreateBlip(target, blipType)
 	local stroke = Instance.new("UIStroke")
 	stroke.Thickness = 1
 	stroke.Parent = blip
+
+	local elevTag = Instance.new("TextLabel")
+	elevTag.Name = "ElevTag"
+	elevTag.Size = UDim2.new(0, 10, 0, 10)
+	elevTag.Position = UDim2.new(0.5, 0, 0, -8)
+	elevTag.AnchorPoint = Vector2.new(0.5, 0.5)
+	elevTag.BackgroundTransparency = 1
+	elevTag.Text = ""
+	elevTag.TextColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE
+	elevTag.Font = Enum.Font.Code
+	elevTag.TextSize = 8
+	elevTag.Visible = false
+	elevTag.ZIndex = 6
+	elevTag.Parent = blip
 	
 	if active then
 		if blipType == "Twisted" then
@@ -2029,6 +2072,7 @@ local function executeRadarTick()
 	local myCFrame = CFrame.lookAt(hrp.Position, hrp.Position + flatLook)
 	local maxRange, radius = 150, 59
 	local seenTargets = {}
+	local nearestTwistedDistSq = math.huge
 
 	local function processTarget(targetObj, blipType)
 		if not targetObj or not targetObj.Parent then return end
@@ -2036,15 +2080,47 @@ local function executeRadarTick()
 		if not part then return end
 
 		local relativePos = myCFrame:PointToObjectSpace(part.Position)
-		local dist2D = Vector2.new(relativePos.X, relativePos.Z).Magnitude
+		local dist2DSq = (relativePos.X * relativePos.X) + (relativePos.Z * relativePos.Z)
+		local maxRangeSq = maxRange * maxRange
 		
-		if dist2D <= maxRange then
+		if blipType == "Twisted" and dist2DSq < nearestTwistedDistSq then
+			nearestTwistedDistSq = dist2DSq
+		end
+
+		if dist2DSq <= maxRangeSq or toggleStates.Advanced_Radar then
 			seenTargets[targetObj] = true
 			local blip = getOrCreateBlip(targetObj, blipType)
-			local rX = (relativePos.X / maxRange) * radius
-			local rY = (relativePos.Z / maxRange) * radius
+			local dist2D = math.sqrt(dist2DSq)
+			local rX, rY
+			
+			if dist2D <= maxRange then
+				rX = (relativePos.X / maxRange) * radius
+				rY = (relativePos.Z / maxRange) * radius
+			else
+				local clampedDist = radius - 2
+				rX = (relativePos.X / dist2D) * clampedDist
+				rY = (relativePos.Z / dist2D) * clampedDist
+			end
 			
 			blip.Position = UDim2.new(0.5, rX, 0.5, rY)
+
+			local elev = blip:FindFirstChild("ElevTag")
+			if elev then
+				if toggleStates.Advanced_Radar and dist2D <= maxRange then
+					local dy = part.Position.Y - hrp.Position.Y
+					if dy > 6 then
+						elev.Text = "▲"
+						elev.Visible = true
+					elseif dy < -6 then
+						elev.Text = "▼"
+						elev.Visible = true
+					else
+						elev.Visible = false
+					end
+				else
+					elev.Visible = false
+				end
+			end
 
 			local blipAngle = (math.deg(math.atan2(rY, rX)) + 360) % 360
 			local scanAngle = scannerPivot.Rotation % 360
@@ -2073,6 +2149,13 @@ local function executeRadarTick()
 	end
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= player and p.Character then processTarget(p.Character, "Player") end
+	end
+
+	if toggleStates.Advanced_Radar and nearestTwistedDistSq <= 625 then
+		local pulse = (math.sin(tick() * 10) + 1) * 0.5
+		threatRingStroke.Transparency = pulse * 0.7
+	else
+		threatRingStroke.Transparency = 1
 	end
 
 	for obj, blip in pairs(cachedBlips) do
