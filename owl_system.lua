@@ -152,8 +152,7 @@ local ConfigSettings = {
 	ToggleKey = Enum.KeyCode.P,
 	GamepadKey = Enum.KeyCode.ButtonL3,
 	PanicKey = Enum.KeyCode.End,
-	RadarRange = 150,
-	DialogueSound = true
+	RadarRange = 150
 }
 
 local MonsterList = {
@@ -495,18 +494,6 @@ zeroText.TextWrapped = true
 zeroText.ZIndex = 16
 zeroText.Parent = zeroWrapper
 
-local soundSonarStart = Instance.new("Sound")
-soundSonarStart.SoundId = "rbxassetid://9114223170"
-soundSonarStart.Volume = 0.45
-soundSonarStart.PlaybackSpeed = 1.0
-soundSonarStart.Parent = zeroWrapper
-
-local soundTypewriter = Instance.new("Sound")
-soundTypewriter.SoundId = "rbxassetid://9114223170"
-soundTypewriter.Volume = 0.15
-soundTypewriter.PlaybackSpeed = 1.6
-soundTypewriter.Parent = zeroWrapper
-
 local chatQueue = {}
 local isChatting = false
 local chatHideTween = nil
@@ -529,10 +516,6 @@ local function processChat()
 	if chatHideTween then chatHideTween:Cancel() end
 	updateZeroUIState(true)
 	
-	if ConfigSettings.DialogueSound then
-		soundSonarStart:Play()
-	end
-	
 	local message = chatQueue[1]
 	table.remove(chatQueue, 1)
 	
@@ -542,10 +525,6 @@ local function processChat()
 	for i = 1, #message do
 		if shuttingDown then break end
 		zeroText.Text = string.sub(message, 1, i)
-		if ConfigSettings.DialogueSound and i % 2 == 0 then
-			soundTypewriter.PlaybackSpeed = math.random(150, 175) / 100
-			soundTypewriter:Play()
-		end
 		task.wait(charWait)
 	end
 	
@@ -684,9 +663,9 @@ radarFrame.ClipsDescendants = true
 radarFrame.Parent = radarWrapper
 
 local sonarPingSound = Instance.new("Sound")
-sonarPingSound.SoundId = "rbxassetid://9114223170"
-sonarPingSound.Volume = 0.35
-sonarPingSound.PlaybackSpeed = 1.2
+sonarPingSound.SoundId = "rbxassetid://6895079853"
+sonarPingSound.Volume = 0.4
+sonarPingSound.PlaybackSpeed = 1.8
 sonarPingSound.Parent = radarFrame
 
 local radarCorner = Instance.new("UICorner")
@@ -1044,11 +1023,6 @@ end)
 local panicBtn = createConfigRow("Panic Key", function() return ConfigSettings.PanicKey.Name end, function(btn)
 	listeningKeySetting = "PanicKey"
 	btn.Text = "..."
-end)
-
-local sndBtn = createConfigRow("Type SFX", function() return ConfigSettings.DialogueSound and "[ON]" or "[OFF]" end, function(btn)
-	ConfigSettings.DialogueSound = not ConfigSettings.DialogueSound
-	btn.Text = ConfigSettings.DialogueSound and "[ON]" or "[OFF]"
 end)
 
 local rngBtn = createConfigRow("Max Range", function() return tostring(ConfigSettings.RadarRange) .. "s" end, function(btn)
