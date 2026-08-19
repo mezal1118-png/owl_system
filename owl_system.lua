@@ -148,6 +148,14 @@ local escapeToggleKey = false
 local radarRange = 150
 local lastPingTick = 0
 
+local ConfigSettings = {
+	ToggleKey = Enum.KeyCode.P,
+	GamepadKey = Enum.KeyCode.ButtonL3,
+	PanicKey = Enum.KeyCode.End,
+	RadarRange = 150,
+	DialogueSound = true
+}
+
 local MonsterList = {
 	"Yatta", "Boxten", "Shelly", "Dandy", "Dyle", "Poppy", "Squirm", "Tisha", "Shrimpo",
 	"Scraps", "Goob", "Vee", "Sprout", "Cosmo", "Astro", "Pebble", "Blot", "Looey",
@@ -194,7 +202,8 @@ local toggleStates = {
 	Instant_Interact = false,
 	Auto_Escape = false,
 	Advanced_Radar = false,
-	Hide_Radar = false
+	Hide_Radar = false,
+	Config_Editor = false
 }
 
 local TrackedEntities = {
@@ -486,6 +495,17 @@ zeroText.TextWrapped = true
 zeroText.ZIndex = 16
 zeroText.Parent = zeroWrapper
 
+local soundSonarStart = Instance.new("Sound")
+soundSonarStart.SoundId = "rbxassetid://9069609200"
+soundSonarStart.Volume = 0.55
+soundSonarStart.Parent = zeroWrapper
+
+local soundTypewriter = Instance.new("Sound")
+soundTypewriter.SoundId = "rbxassetid://9114223170"
+soundTypewriter.Volume = 0.2
+soundTypewriter.PlaybackSpeed = 1.3
+soundTypewriter.Parent = zeroWrapper
+
 local chatQueue = {}
 local isChatting = false
 local chatHideTween = nil
@@ -508,6 +528,10 @@ local function processChat()
 	if chatHideTween then chatHideTween:Cancel() end
 	updateZeroUIState(true)
 	
+	if ConfigSettings.DialogueSound then
+		soundSonarStart:Play()
+	end
+	
 	local message = chatQueue[1]
 	table.remove(chatQueue, 1)
 	
@@ -517,6 +541,10 @@ local function processChat()
 	for i = 1, #message do
 		if shuttingDown then break end
 		zeroText.Text = string.sub(message, 1, i)
+		if ConfigSettings.DialogueSound and i % 2 == 0 then
+			soundTypewriter.PlaybackSpeed = math.random(125, 140) / 100
+			soundTypewriter:Play()
+		end
 		task.wait(charWait)
 	end
 	
@@ -889,7 +917,143 @@ radarWrapper.InputChanged:Connect(function(input)
 		else
 			radarRange = math.clamp(radarRange + 25, 75, 250)
 		end
+		ConfigSettings.RadarRange = radarRange
 	end
+end)
+
+local configEditorFrame = Instance.new("Frame")
+configEditorFrame.Size = UDim2.new(0, 150, 0, 140)
+configEditorFrame.Position = UDim2.new(1, -300, 0, 24)
+configEditorFrame.BackgroundColor3 = COLOR_BG
+configEditorFrame.BorderSizePixel = 0
+configEditorFrame.Visible = false
+configEditorFrame.Active = true
+configEditorFrame.Draggable = true
+configEditorFrame.ZIndex = 11
+configEditorFrame.Parent = screenGui
+
+local configCorner = Instance.new("UICorner")
+configCorner.CornerRadius = UDim.new(0, 4)
+configCorner.Parent = configEditorFrame
+
+local configStroke = Instance.new("UIStroke")
+configStroke.Thickness = 1.5
+configStroke.Color = COLOR_INACTIVE
+configStroke.Parent = configEditorFrame
+
+buildCornerWidget(configEditorFrame, true, true)
+buildCornerWidget(configEditorFrame, true, false)
+buildCornerWidget(configEditorFrame, false, true)
+buildCornerWidget(configEditorFrame, false, false)
+
+local configTitle = Instance.new("TextLabel")
+configTitle.Size = UDim2.new(1, -12, 0, 16)
+configTitle.Position = UDim2.new(0, 6, 0, 3)
+configTitle.BackgroundTransparency = 1
+configTitle.Text = "// CONFIG EDITOR //"
+configTitle.TextColor3 = COLOR_INACTIVE
+configTitle.Font = Enum.Font.Code
+configTitle.TextSize = 9
+configTitle.TextXAlignment = Enum.TextXAlignment.Left
+configTitle.ZIndex = 12
+configTitle.Parent = configEditorFrame
+
+local configDivider = Instance.new("Frame")
+configDivider.Size = UDim2.new(1, -12, 0, 1)
+configDivider.Position = UDim2.new(0, 6, 0, 20)
+configDivider.BackgroundColor3 = COLOR_INACTIVE
+configDivider.BackgroundTransparency = 0.5
+configDivider.BorderSizePixel = 0
+configDivider.ZIndex = 12
+configDivider.Parent = configEditorFrame
+
+local configScroll = Instance.new("ScrollingFrame")
+configScroll.Size = UDim2.new(1, -8, 1, -26)
+configScroll.Position = UDim2.new(0, 4, 0, 23)
+configScroll.BackgroundTransparency = 1
+configScroll.BorderSizePixel = 0
+configScroll.ScrollBarThickness = 2
+configScroll.ScrollBarImageColor3 = COLOR_INACTIVE
+configScroll.CanvasSize = UDim2.new(0, 0, 0, 120)
+configScroll.ZIndex = 12
+configScroll.Parent = configEditorFrame
+
+local configList = Instance.new("UIListLayout")
+configList.Padding = UDim.new(0, 4)
+configList.Parent = configScroll
+
+local listeningKeySetting = nil
+
+local function createConfigRow(labelName, getValueText, onClick)
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1, -4, 0, 16)
+	row.BackgroundTransparency = 1
+	row.ZIndex = 13
+	row.Parent = configScroll
+
+	local lbl = Instance.new("TextLabel")
+	lbl.Size = UDim2.new(0.55, 0, 1, 0)
+	lbl.Position = UDim2.new(0, 2, 0, 0)
+	lbl.BackgroundTransparency = 1
+	lbl.Text = labelName
+	lbl.TextColor3 = COLOR_TEXT_DIM
+	lbl.Font = Enum.Font.Code
+	lbl.TextSize = 8
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	lbl.ZIndex = 13
+	lbl.Parent = row
+
+	local valBtn = Instance.new("TextLabel")
+	valBtn.Size = UDim2.new(0.42, 0, 1, 0)
+	valBtn.Position = UDim2.new(0.56, 0, 0, 0)
+	valBtn.BackgroundColor3 = COLOR_PANEL_BG
+	valBtn.Text = getValueText()
+	valBtn.TextColor3 = COLOR_INACTIVE
+	valBtn.Font = Enum.Font.Code
+	valBtn.TextSize = 8
+	valBtn.Active = true
+	valBtn.ZIndex = 13
+	valBtn.Parent = row
+
+	local valCorner = Instance.new("UICorner")
+	valCorner.CornerRadius = UDim.new(0, 3)
+	valCorner.Parent = valBtn
+
+	local valStroke = Instance.new("UIStroke")
+	valStroke.Thickness = 1
+	valStroke.Color = COLOR_INACTIVE
+	valStroke.Transparency = 0.6
+	valStroke.Parent = valBtn
+
+	valBtn.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			onClick(valBtn)
+		end
+	end)
+
+	table.insert(toggleList, {label = lbl, badge = valBtn, stroke = valStroke})
+	return valBtn
+end
+
+local keybindBtn = createConfigRow("Toggle Key", function() return ConfigSettings.ToggleKey.Name end, function(btn)
+	listeningKeySetting = "ToggleKey"
+	btn.Text = "..."
+end)
+
+local panicBtn = createConfigRow("Panic Key", function() return ConfigSettings.PanicKey.Name end, function(btn)
+	listeningKeySetting = "PanicKey"
+	btn.Text = "..."
+end)
+
+local sndBtn = createConfigRow("Type SFX", function() return ConfigSettings.DialogueSound and "[ON]" or "[OFF]" end, function(btn)
+	ConfigSettings.DialogueSound = not ConfigSettings.DialogueSound
+	btn.Text = ConfigSettings.DialogueSound and "[ON]" or "[OFF]"
+end)
+
+local rngBtn = createConfigRow("Max Range", function() return tostring(ConfigSettings.RadarRange) .. "s" end, function(btn)
+	radarRange = (radarRange >= 250) and 75 or (radarRange + 25)
+	ConfigSettings.RadarRange = radarRange
+	btn.Text = tostring(radarRange) .. "s"
 end)
 
 local mainFrame = Instance.new("Frame")
@@ -1353,6 +1517,7 @@ local function executeToggleLogic(id, state)
 	elseif id == "Player_ESP" then if state then scanAndApplyESP() else removeESPType("Player") end
 	elseif id == "Stat_HUD" then statHudFrame.Visible = state
 	elseif id == "Instant_Interact" then updateProximityPrompts()
+	elseif id == "Config_Editor" then configEditorFrame.Visible = state
 	elseif id == "Advanced_Radar" then
 		if not state then
 			threatRingStroke.Transparency = 1
@@ -1666,6 +1831,7 @@ createToggle("Instant_Interact", "Instant_Interact", 7)
 createToggle("Auto_Escape", "Auto_Escape", 8)
 createToggle("Advanced_Radar", "Advanced_Radar", 9)
 createToggle("Hide_Radar", "Hide_Radar", 10)
+createToggle("Config_Editor", "Config_Editor", 11)
 
 local fadeTweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
 local cachedBlips = {} 
@@ -1690,6 +1856,11 @@ local function updateUI()
 	TweenService:Create(statInnerStroke, ti, {Color = targetColor, Transparency = active and 0.5 or 0.8}):Play()
 	TweenService:Create(statTitle, ti, {TextColor3 = targetColor}):Play()
 	TweenService:Create(statDivider, ti, {BackgroundColor3 = targetColor}):Play()
+
+	TweenService:Create(configStroke, ti, {Color = targetColor}):Play()
+	TweenService:Create(configTitle, ti, {TextColor3 = targetColor}):Play()
+	TweenService:Create(configDivider, ti, {BackgroundColor3 = targetColor}):Play()
+	TweenService:Create(configScroll, ti, {ScrollBarImageColor3 = targetColor}):Play()
 	
 	TweenService:Create(radarOuterStroke, ti, {Color = targetColor}):Play()
 	for _, techEl in ipairs(techCornerElements) do TweenService:Create(techEl, ti, {BackgroundColor3 = targetColor}):Play() end
@@ -1721,8 +1892,8 @@ local function updateUI()
 		
 		if active then
 			if blip.Name == "Twisted" then
-				targetBg = Color3.fromRGB(210, 160, 255)
-				targetStroke = Color3.fromRGB(255, 255, 255)
+				targetBg = Color3.fromRGB(0, 0, 0)
+				targetStroke = COLOR_ACTIVE
 			elseif blip.Name == "Player" then
 				targetBg = Color3.fromRGB(255, 255, 255)
 				targetStroke = COLOR_ACTIVE
@@ -1769,7 +1940,7 @@ local function toggleExtension()
 	togglesOpen = not togglesOpen
 	local ti = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	if togglesOpen then
-		TweenService:Create(extendedFrame, ti, {Size = UDim2.new(1, 0, 0, 172)}):Play()
+		TweenService:Create(extendedFrame, ti, {Size = UDim2.new(1, 0, 0, 188)}):Play()
 		TweenService:Create(extOuterStroke, ti, {Transparency = 0, Color = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
 		TweenService:Create(extSideL, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
 		TweenService:Create(extSideR, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
@@ -1820,7 +1991,7 @@ local function toggleMinimize()
 		TweenService:Create(innerStroke, ti, {Transparency = active and 0.5 or 0.8}):Play()
 		TweenService:Create(bottomHeader, ti, {TextTransparency = 0}):Play()
 		if togglesOpen then
-			TweenService:Create(extendedFrame, ti, {Size = UDim2.new(1, 0, 0, 172)}):Play()
+			TweenService:Create(extendedFrame, ti, {Size = UDim2.new(1, 0, 0, 188)}):Play()
 			TweenService:Create(extOuterStroke, ti, {Transparency = 0}):Play()
 			TweenService:Create(extSideL, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
 			TweenService:Create(extSideR, ti, {BackgroundTransparency = active and 0.5 or 0.8, BackgroundColor3 = active and COLOR_ACTIVE or COLOR_INACTIVE}):Play()
@@ -1880,6 +2051,11 @@ local function startYellowTransition()
 	table.insert(yellowTweens, TweenService:Create(statInnerStroke, ti, {Color = colorWarn}))
 	table.insert(yellowTweens, TweenService:Create(statTitle, ti, {TextColor3 = colorWarn}))
 	table.insert(yellowTweens, TweenService:Create(statDivider, ti, {BackgroundColor3 = colorWarn}))
+
+	table.insert(yellowTweens, TweenService:Create(configStroke, ti, {Color = colorWarn}))
+	table.insert(yellowTweens, TweenService:Create(configTitle, ti, {TextColor3 = colorWarn}))
+	table.insert(yellowTweens, TweenService:Create(configDivider, ti, {BackgroundColor3 = colorWarn}))
+	table.insert(yellowTweens, TweenService:Create(configScroll, ti, {ScrollBarImageColor3 = colorWarn}))
 	
 	table.insert(yellowTweens, TweenService:Create(radarOuterStroke, ti, {Color = colorWarn}))
 	for _, techEl in ipairs(techCornerElements) do table.insert(yellowTweens, TweenService:Create(techEl, ti, {BackgroundColor3 = colorWarn})) end
@@ -1995,8 +2171,23 @@ end))
 
 table.insert(connections, UserInputService.InputBegan:Connect(function(input, gpe)
 	if gpe or shuttingDown then return end
-	if input.KeyCode == Enum.KeyCode.ButtonL3 or input.KeyCode == Enum.KeyCode.P then toggle()
-	elseif input.KeyCode == Enum.KeyCode.Delete or input.KeyCode == Enum.KeyCode.End then wipeSystem() end
+
+	if listeningKeySetting then
+		if input.UserInputType == Enum.UserInputType.Keyboard then
+			if listeningKeySetting == "ToggleKey" then
+				ConfigSettings.ToggleKey = input.KeyCode
+				keybindBtn.Text = input.KeyCode.Name
+			elseif listeningKeySetting == "PanicKey" then
+				ConfigSettings.PanicKey = input.KeyCode
+				panicBtn.Text = input.KeyCode.Name
+			end
+			listeningKeySetting = nil
+			return
+		end
+	end
+
+	if input.KeyCode == ConfigSettings.GamepadKey or input.KeyCode == ConfigSettings.ToggleKey then toggle()
+	elseif input.KeyCode == ConfigSettings.PanicKey or input.KeyCode == Enum.KeyCode.Delete then wipeSystem() end
 end))
 
 local function registerDescendant(desc)
@@ -2086,8 +2277,8 @@ local function getOrCreateBlip(target, blipType)
 	
 	if active then
 		if blipType == "Twisted" then
-			blip.BackgroundColor3 = Color3.fromRGB(210, 160, 255)
-			stroke.Color = Color3.fromRGB(255, 255, 255)
+			blip.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
+			stroke.Color = COLOR_ACTIVE
 		elseif blipType == "Player" then
 			blip.BackgroundColor3 = Color3.fromRGB(255, 255, 255) 
 			stroke.Color = COLOR_ACTIVE
