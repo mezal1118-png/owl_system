@@ -383,56 +383,101 @@ local DialogueLines = {
 	}
 }
 
+local ZERO_POS_SHOWN = UDim2.new(0.5, -130, 0, 6)
+local ZERO_POS_HIDDEN = UDim2.new(0.5, -130, 0, -8)
+
 local zeroWrapper = Instance.new("Frame")
-zeroWrapper.Size = UDim2.new(0, 240, 0, 56)
-zeroWrapper.Position = UDim2.new(0.5, -120, 0, -2) 
-zeroWrapper.BackgroundColor3 = Color3.fromRGB(10, 5, 14)
+zeroWrapper.Size = UDim2.new(0, 260, 0, 62)
+zeroWrapper.Position = ZERO_POS_HIDDEN
+zeroWrapper.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 zeroWrapper.BorderSizePixel = 0
 zeroWrapper.BackgroundTransparency = 1
 zeroWrapper.ZIndex = 15
 zeroWrapper.Parent = screenGui
 
 local zeroCorner = Instance.new("UICorner")
-zeroCorner.CornerRadius = UDim.new(0, 4)
+zeroCorner.CornerRadius = UDim.new(0, 8)
 zeroCorner.Parent = zeroWrapper
+
+local zeroGradient = Instance.new("UIGradient")
+zeroGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(34, 14, 54)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 5, 16))
+})
+zeroGradient.Rotation = 90
+zeroGradient.Parent = zeroWrapper
 
 local zeroStroke = Instance.new("UIStroke")
 zeroStroke.Color = COLOR_ACTIVE
 zeroStroke.Thickness = 1
 zeroStroke.Transparency = 1
+zeroStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 zeroStroke.Parent = zeroWrapper
 
+local zeroStrokeGradient = Instance.new("UIGradient")
+zeroStrokeGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, COLOR_ACTIVE),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 110, 200))
+})
+zeroStrokeGradient.Rotation = 0
+zeroStrokeGradient.Parent = zeroStroke
+
 local zeroAccent = Instance.new("Frame")
-zeroAccent.Size = UDim2.new(0, 3, 1, 0)
-zeroAccent.Position = UDim2.new(0, 0, 0, 0)
-zeroAccent.BackgroundColor3 = COLOR_ACTIVE
+zeroAccent.Size = UDim2.new(0, 3, 1, -16)
+zeroAccent.Position = UDim2.new(0, 8, 0, 8)
+zeroAccent.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 zeroAccent.BorderSizePixel = 0
 zeroAccent.BackgroundTransparency = 1
 zeroAccent.ZIndex = 16
 zeroAccent.Parent = zeroWrapper
 
+local zeroAccentCorner = Instance.new("UICorner")
+zeroAccentCorner.CornerRadius = UDim.new(1, 0)
+zeroAccentCorner.Parent = zeroAccent
+
+local zeroAccentGradient = Instance.new("UIGradient")
+zeroAccentGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 110, 200)),
+	ColorSequenceKeypoint.new(1, COLOR_ACTIVE)
+})
+zeroAccentGradient.Rotation = 90
+zeroAccentGradient.Parent = zeroAccent
+
+local zeroDot = Instance.new("Frame")
+zeroDot.Size = UDim2.new(0, 6, 0, 6)
+zeroDot.Position = UDim2.new(0, 18, 0, 10)
+zeroDot.BackgroundColor3 = Color3.fromRGB(120, 255, 170)
+zeroDot.BorderSizePixel = 0
+zeroDot.BackgroundTransparency = 1
+zeroDot.ZIndex = 16
+zeroDot.Parent = zeroWrapper
+
+local zeroDotCorner = Instance.new("UICorner")
+zeroDotCorner.CornerRadius = UDim.new(1, 0)
+zeroDotCorner.Parent = zeroDot
+
 local zeroHeader = Instance.new("TextLabel")
-zeroHeader.Size = UDim2.new(1, -12, 0, 14)
-zeroHeader.Position = UDim2.new(0, 8, 0, 4)
+zeroHeader.Size = UDim2.new(1, -36, 0, 14)
+zeroHeader.Position = UDim2.new(0, 29, 0, 6)
 zeroHeader.BackgroundTransparency = 1
-zeroHeader.Text = "[ <0> ]"
-zeroHeader.TextColor3 = COLOR_ACTIVE
+zeroHeader.Text = "ZERO"
+zeroHeader.TextColor3 = Color3.fromRGB(225, 190, 255)
 zeroHeader.TextTransparency = 1
-zeroHeader.Font = Enum.Font.Code
+zeroHeader.Font = Enum.Font.GothamBold
 zeroHeader.TextSize = 11
 zeroHeader.TextXAlignment = Enum.TextXAlignment.Left
 zeroHeader.ZIndex = 16
 zeroHeader.Parent = zeroWrapper
 
 local zeroText = Instance.new("TextLabel")
-zeroText.Size = UDim2.new(1, -14, 1, -20)
-zeroText.Position = UDim2.new(0, 8, 0, 18)
+zeroText.Size = UDim2.new(1, -30, 1, -28)
+zeroText.Position = UDim2.new(0, 18, 0, 22)
 zeroText.BackgroundTransparency = 1
 zeroText.Text = ""
-zeroText.TextColor3 = Color3.fromRGB(210, 200, 225)
+zeroText.TextColor3 = Color3.fromRGB(235, 228, 245)
 zeroText.TextTransparency = 1
-zeroText.Font = Enum.Font.Code
-zeroText.TextSize = 10
+zeroText.Font = Enum.Font.Gotham
+zeroText.TextSize = 11
 zeroText.TextXAlignment = Enum.TextXAlignment.Left
 zeroText.TextYAlignment = Enum.TextYAlignment.Top
 zeroText.TextWrapped = true
@@ -454,15 +499,22 @@ local chatQueue = {}
 local isChatting = false
 local chatHideTween = nil
 
-local function updateZeroUIState(visible)
-	local ti = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local function updateZeroUIState(visible, delayTime)
+	local ti = visible
+		and TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		or TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, delayTime or 0)
 	local trans = visible and 0 or 1
-	local bgTrans = visible and 0.2 or 1
-	TweenService:Create(zeroWrapper, ti, {BackgroundTransparency = bgTrans}):Play()
-	TweenService:Create(zeroStroke, ti, {Transparency = visible and 0.4 or 1}):Play()
+	local wrapperTween = TweenService:Create(zeroWrapper, ti, {
+		BackgroundTransparency = visible and 0.08 or 1,
+		Position = visible and ZERO_POS_SHOWN or ZERO_POS_HIDDEN
+	})
+	wrapperTween:Play()
+	TweenService:Create(zeroStroke, ti, {Transparency = visible and 0.35 or 1}):Play()
 	TweenService:Create(zeroAccent, ti, {BackgroundTransparency = trans}):Play()
+	TweenService:Create(zeroDot, ti, {BackgroundTransparency = trans}):Play()
 	TweenService:Create(zeroHeader, ti, {TextTransparency = trans}):Play()
 	TweenService:Create(zeroText, ti, {TextTransparency = trans}):Play()
+	return wrapperTween
 end
 
 local function processChat()
@@ -482,7 +534,8 @@ local function processChat()
 	
 	for i = 1, #message do
 		if shuttingDown or not toggleStates.Responses then break end
-		zeroText.Text = string.sub(message, 1, i)
+		zeroText.Text = string.sub(message, 1, i) .. (i < #message and "_" or "")
+		zeroDot.BackgroundTransparency = (i % 10 < 5) and 0 or 0.6
 		if i % 2 == 0 then
 			pcall(function()
 				soundTypewriter.PlaybackSpeed = math.random(95, 110) / 100
@@ -493,6 +546,8 @@ local function processChat()
 	end
 	
 	if toggleStates.Responses then
+		zeroText.Text = message
+		zeroDot.BackgroundTransparency = 0
 		task.wait(math.clamp(#message * 0.06, 2, 4))
 	end
 	
@@ -500,12 +555,7 @@ local function processChat()
 	if #chatQueue > 0 then
 		processChat()
 	else
-		chatHideTween = TweenService:Create(zeroWrapper, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 1.5), {BackgroundTransparency = 1})
-		chatHideTween:Play()
-		TweenService:Create(zeroStroke, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 1.5), {Transparency = 1}):Play()
-		TweenService:Create(zeroAccent, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 1.5), {BackgroundTransparency = 1}):Play()
-		TweenService:Create(zeroHeader, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 1.5), {TextTransparency = 1}):Play()
-		TweenService:Create(zeroText, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 1.5), {TextTransparency = 1}):Play()
+		chatHideTween = updateZeroUIState(false, 1.5)
 	end
 end
 
@@ -2058,6 +2108,7 @@ local function startYellowTransition()
 			TweenService:Create(zeroWrapper, fadeOutTI, {BackgroundTransparency = 1}):Play()
 			TweenService:Create(zeroStroke, fadeOutTI, {Transparency = 1}):Play()
 			TweenService:Create(zeroAccent, fadeOutTI, {BackgroundTransparency = 1}):Play()
+			TweenService:Create(zeroDot, fadeOutTI, {BackgroundTransparency = 1}):Play()
 			TweenService:Create(zeroHeader, fadeOutTI, {TextTransparency = 1}):Play()
 			TweenService:Create(zeroText, fadeOutTI, {TextTransparency = 1}):Play()
 			for _, item in ipairs(toggleList) do 
