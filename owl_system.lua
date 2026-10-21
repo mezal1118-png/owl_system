@@ -5,6 +5,7 @@ local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local CollectionService = game:GetService("CollectionService")
+local ProximityPromptService = game:GetService("ProximityPromptService")
 
 local player = Players.LocalPlayer
 local pgui = player:WaitForChild("PlayerGui")
@@ -201,6 +202,7 @@ local toggleStates = {
 	Auto_Escape = false,
 	Advanced_Radar = false,
 	Hide_Radar = false,
+	Responses = true,
 	Editor = false
 }
 
@@ -261,262 +263,490 @@ local COLOR_TEXT_DIM = Color3.fromRGB(190, 180, 210)
 
 local DialogueLines = {
 	Health2 = {
-		"I'd suggest running, but your legs look like ground meat.",
-		"You know they can smell that, right? The blood, I mean.",
-		"I'd deploy a medical team, but we both know you aren't worth the budget.",
-		"Try to keep your internal organs internal, would you?",
-		"That looked like it hurt. I didn't feel a thing, obviously.",
-		"I see you've decided to test the structural limits of your ribcage.",
-		"Please note that the facility is not responsible for your missing appendages.",
-		"I am watching you bleed. It's not as educational as I hoped.",
-		"If you're going to expire, please do it near a drainage grate.",
-		"I see you can still feel that. How fascinatingly awful for you.",
-		"Statistically, you should be dead by now. Stop padding the numbers.",
-		"I've started drafting your replacement's onboarding forms.",
-		"Just a few more mistakes and this tedious observation period is over.",
-		"You're leaking fluids on my clean floor.",
-		"Oh good, structural damage. I was starting to think you were actually competent.",
-		"If you die, I'm logging it as user error.",
-		"A few hits left until you become a very messy stain.",
-		"Are you trying to get killed, or is this just how you normally operate?",
-		"Do try to die quietly, the noise is giving me a headache.",
-		"At this rate, I'll have a new subject in here in about a minute."
+		"Okay, that one landed. Two hearts left.",
+		"Ouch. Let's not do that again.",
+		"You're down to two. Maybe play this next bit safe.",
+		"That's a hit. Find somewhere quiet and breathe for a sec.",
+		"Two hearts. Still fine, just don't get greedy.",
+		"Hey, you good? That looked rough.",
+		"Shake it off. You've got room for one more mistake, not two.",
+		"Little closer than I'd like. Keep your eyes open.",
+		"You took a hit. It happens. Stay sharp.",
+		"Two left. If you've got a heal on you, think about it.",
+		"Not ideal. Let's get some distance.",
+		"Alright, they've noticed you. Move.",
+		"That's fine. That's totally fine. Just maybe run.",
+		"Okay, lesson learned on that corner, right?",
+		"You're hurt, but you're not out. Keep going."
 	},
 	Health1 = {
-		"I will not be attending your funeral.",
-		"I would tell you to breathe, but your lungs look punctured.",
-		"Please wrap yourself in plastic before the final blow. Think of the janitors.",
-		"I've stopped recording your progress. There's no point anymore.",
-		"I hope you enjoyed your brief, pointless existence.",
-		"You are one tiny misstep away from a very embarrassing demise.",
-		"You are exactly one bad choice away from being scraped off the floor.",
-		"I'm already crossing your name off the roster to save time.",
-		"If you die now, I'm the one who has to clean up the resulting mess.",
-		"A light breeze would probably finish you off right now.",
-		"Are you sweating? Oh wait, that's just a lot of blood.",
-		"This is the end. It was nice watching you flail around.",
-		"It's a miracle you're still standing. A disgusting, wet miracle.",
-		"You are breathing very heavily. Try dying faster, it's less annoying.",
-		"I'm already deleting your search history. You're welcome.",
-		"You look terrible. Even by human standards.",
-		"I am currently guessing exactly where you're going to fall over.",
-		"Any last words? Oh, wait, your vocal cords are crushed. Never mind.",
-		"The next hit will be lethal. Try to make it entertaining.",
-		"I'm assuming this is the part where you dramatically collapse."
+		"One heart. Please be careful.",
+		"Okay, this is the part where you don't get hit.",
+		"You're on your last heart. Heal if you can.",
+		"I'm not panicking. You're panicking. Find a hiding spot.",
+		"One more hit and that's it. Slow down.",
+		"Last heart. No hero moves, okay?",
+		"Hey. Breathe. Find a heal or find a locker.",
+		"This is getting a little too close for me.",
+		"You're running on fumes. Play it safe.",
+		"One left. I'd really like you to keep it.",
+		"Don't push your luck right now. Seriously.",
+		"Okay, deep breath. Get away from them first, think second.",
+		"That was nearly it. Let's not find out what's next.",
+		"Last one. Stick to the edges and stay quiet.",
+		"You can still pull this off. Just be smart about it."
 	},
 	Dead = {
-		"I told you to be careful. You never listen.",
-		"Well, at least I don't have to watch you stumble around anymore.",
-		"Oops. You broke.",
-		"That was entirely your fault.",
-		"Good news: your suffering is over. Bad news: everything else.",
-		"Let the record show I offered absolutely no help.",
-		"Another test subject wasted. Such a tragedy. Anyway...",
-		"And nothing of value was lost.",
-		"And that's exactly why humans are so incredibly disappointing.",
-		"Cleanup on aisle four. We have a splattered player.",
-		"I'm putting 'died doing absolutely nothing useful' on your report.",
-		"Subject deceased. Shocking absolutely no one.",
-		"You lasted exactly a fraction of a percent longer than the worst player here.",
-		"Game over. Waiting for someone better to take your place.",
-		"I am adding 'cannot survive a simple hit' to your file.",
-		"You finally stopped moving. Thank goodness.",
-		"I'm putting your remains in the trash bin.",
-		"I would ask you to leave, but you're sort of stuck to the floor now.",
-		"You died as you lived. Disappointingly.",
-		"I would pretend to be sad, but I simply don't care."
+		"Ah. That's rough. You'll get them next time.",
+		"Yeah, I saw that coming about a second too late too.",
+		"Well, that happened.",
+		"Not your best run. Shake it off.",
+		"That one's on them. Mostly.",
+		"Oof. I'm sorry.",
+		"Down you go. Take a breather.",
+		"You did better than you think.",
+		"Hey, it happens to everyone eventually.",
+		"Okay, that was a little unfair. I'll allow some complaining.",
+		"Round over for you. I'll keep the seat warm.",
+		"You almost had it. Almost.",
+		"Well, now you know where not to stand.",
+		"Don't worry about it. Next one'll go better.",
+		"Rest up. We'll try again."
 	},
 	HealMinor = {
-		"Ah, the placebo effect in action.",
-		"You missed a spot. Several, actually.",
-		"That's cute. You're trying to fix yourself.",
-		"Wow, you found tape. You must be a doctor.",
-		"I'm sure that makes you feel much better. It doesn't.",
-		"I've seen corpses look healthier than you.",
-		"A bandage? That's adorable. It won't save you.",
-		"I suppose that delays the inevitable by a couple of seconds.",
-		"Congratulations. You are slightly less dead.",
-		"Did you really think that would help?",
-		"Putting a tiny bandage over a massive wound. Brilliant.",
-		"You still look completely ridiculous.",
-		"Medical supplies wasted. Taking that out of your paycheck.",
-		"A tiny bit of health. Barely worth the effort.",
-		"That isn't going to stop the bleeding, you know.",
-		"Healing tiny scratches. How incredibly boring.",
-		"If you wanted to live, you shouldn't have come here.",
-		"You patched a scratch. I'll alert the media.",
-		"Just enough health to suffer slightly longer.",
-		"Delaying your end is just annoying for everyone."
+		"A little better. Every bit helps.",
+		"There you go. One more heart.",
+		"Patched up a bit. Not perfect, but it'll do.",
+		"Good call. That might save you later.",
+		"Feeling a little steadier?",
+		"That's one back. Keep it.",
+		"Small heal, but I'll take it.",
+		"Nice. Now you can breathe a little.",
+		"Better than nothing. Way better, actually.",
+		"There's some color back in you.",
+		"Okay, that helps. Let's not waste it.",
+		"Smart. Heal while it's quiet."
 	},
 	HealMajor = {
-		"Look at you, pretending you aren't going to die.",
-		"Full heal applied. I give it a couple of minutes.",
-		"I was getting used to the sound of your wheezing.",
-		"Health restored. Now stop wasting my inventory.",
-		"Don't get used to feeling intact.",
-		"You look almost presentable now. Almost.",
-		"Oh, you found a medkit. Enjoy your brief, false sense of safety.",
-		"You're fully healed... for whatever that's worth.",
-		"Your breathing went back to normal. How terribly annoying.",
-		"Excellent. Now you can get beat up all over again.",
-		"You're healthy again. Try not to ruin it immediately this time.",
-		"I wasted good supplies to save one fragile player.",
-		"You're completely fine. The twisteds will find you much tastier now.",
-		"Oh good, you're healthy. That means I can make this harder.",
-		"All patched up. Ready to make the exact same mistakes again?",
-		"I suppose keeping you alive is slightly better than smelling you rot.",
-		"Wow. Full health. The twisteds are going to love you.",
-		"You finally stopped bleeding. Try to keep it that way.",
-		"Healing complete. I'll change your status from 'dying' to 'about to die'."
+		"Look at that, good as new.",
+		"Full health. Let's keep it that way this time.",
+		"That's a lot better. Ready to go again?",
+		"Big heal. You were cutting it close there.",
+		"Back on your feet. Nice.",
+		"Okay, you're solid again. Don't spend it all at once.",
+		"Much better. I was getting a little worried.",
+		"Fresh start. Try to make it last.",
+		"That's what I like to see.",
+		"Healthy again. Now let's finish this floor.",
+		"Topped off. Go get them.",
+		"You look a lot less like a disaster now."
 	},
 	Casual = {
-		"Do you ever wonder what's under the floor? You shouldn't look.",
-		"The lights in here are awful. Just like your outfit.",
-		"Are you lost? Because you look really, really lost.",
-		"I do hope you realize I'm not here to help you.",
-		"Please stop breathing so loudly. It's annoying.",
-		"You have a very weird face. I thought you should know.",
-		"If I could sigh, I would be doing it right now.",
-		"I would complain about the company, but you don't even count.",
-		"It is amazing how you always pick the worst way to go.",
-		"I'm judging every single choice you make. It's not going well.",
-		"Are you going to do something useful, or just stand there staring?",
-		"The floor isn't going to break. Stop walking so weirdly.",
-		"I'd give you a map, but I think it's funnier to watch you get lost.",
-		"I miss the old players. They screamed much quieter than you do.",
-		"I'd ask you to run faster, but I don't want you to trip and cry.",
-		"The way you walk around is just... really sad to watch.",
-		"I'd ask how you are, but I literally don't care at all.",
-		"Sorry about the mess. I've really let the place go.",
-		"I might take up a hobby. Reanimating the dead, maybe.",
-		"I'm happy to put this all behind us and get back to work. We've got a lot to do."
+		"Quiet in here. I don't trust it.",
+		"You hear that? No? Good. Me neither.",
+		"Machines first, snacks later. Probably.",
+		"If you see a locker, just keep it in mind.",
+		"I'd tell you a joke, but they might hear you laugh.",
+		"Have you checked that room? I feel like you haven't.",
+		"I'm just saying, the elevator is not going anywhere without you.",
+		"How are we doing? Be honest.",
+		"Take it slow. Nobody's grading this.",
+		"I like this floor. Fewer surprises. So far.",
+		"Don't forget to grab what you can carry.",
+		"Every time it goes quiet I get a little nervous.",
+		"You're doing fine, by the way. Just thought you should hear it.",
+		"Stretch your legs. Not literally, keep moving.",
+		"I swear these hallways get longer every floor."
 	},
 	Affec1 = {
-		"Five whole minutes and you haven't died yet. Annoying. ^ _^",
-		"Still alive? Did the twisteds lose their glasses or something? ᵔ⤙ᵔ",
-		"Look at you running around like a headless chicken. ^ _^",
-		"Are you hiding in a corner or actually doing something? ᵔ⤙ᵔ",
-		"Not a single hit taken. Don't get cocky, it won't last. ^ _^",
-		"Five minutes without dying. You're just delaying the inevitable. ᵔ⤙ᵔ",
-		"You haven't lost any health yet. Did the twisteds take a nap? ^ _^",
-		"Still in one piece? Keep running, it's funny watching you panic. ᵔ⤙ᵔ",
-		"I was getting ready to laugh, but you're still walking around. ^ _^",
-		"Look at those little legs scramble. ᵔ⤙ᵔ",
-		"Five minutes clean. Let's see how fast you mess it up. ^ _^",
-		"You survived five minutes. Don't let it go to your head. ᵔ⤙ᵔ",
-		"No damage yet. Try not to trip over your own feet now. ^ _^",
-		"You're running fast today. Must be terrified. ᵔ⤙ᵔ",
-		"Still breathing? Fine, I'll hold off on the trash talk for a bit. ^ _^",
-		"You haven't gotten hit once. The twisteds must be slacking. ᵔ⤙ᵔ",
-		"Running in circles won't save you forever. ^ _^",
-		"No scratches yet. Don't worry, you'll mess up soon enough. ᵔ⤙ᵔ",
-		"You're surviving way longer than usual. It's almost creepy. ^ _^",
-		"Still alive. Cute. Let's see how long that lasts. ᵔ⤙ᵔ"
+		"Five minutes without a scratch. Not bad at all. ^ _^",
+		"Still clean. You're actually pretty good at this. ᵔ⤙ᵔ",
+		"No hits yet. Whatever you're doing, keep doing it. ^ _^",
+		"Five minutes and they still haven't touched you. Nice. ᵔ⤙ᵔ",
+		"You're making this look easy. It isn't. ^ _^",
+		"Not one hit. I'm a little impressed. ᵔ⤙ᵔ",
+		"Clean run so far. Don't jinx it. ^ _^",
+		"Okay, you're on a roll. ᵔ⤙ᵔ",
+		"Still full health. That's genuinely good playing. ^ _^",
+		"They keep missing you. I love that for you. ᵔ⤙ᵔ"
 	},
 	Affec2 = {
-		"Woah, woah, woaah—.. Ha, ha ha hahaha! Good news. I just figured out that your survival rate is up 200%. ^ _^",
-		"Fifteen minutes without getting hit once. You really are terrified of dying. ᵔ⤙ᵔ",
-		"Running laps around the map won't make you look any less ridiculous. ^ _^",
-		"Fifteen whole minutes? Okay, now you're just being annoying. ᵔ⤙ᵔ",
-		"You haven't taken a single hit. Seriously, go touch some grass. ^ _^",
-		"I ran out of jokes about you dying. You're ruining my fun. ᵔ⤙ᵔ",
-		"You're actually dragging this out on purpose, aren't you? Disgusting. ^ _^",
-		"Not one hit in fifteen minutes. The twisteds are completely useless today. ᵔ⤙ᵔ",
-		"Stop running around so much, you're making the sensors dizzy. ^ _^",
-		"The twisteds must be blind if they haven't caught you yet. ᵔ⤙ᵔ",
-		"I'm still waiting to see you get wrecked. Don't disappoint me. ^ _^",
-		"Still zero damage? You really don't want to get touched, huh? ᵔ⤙ᵔ",
-		"You've been alive so long I might actually have to learn your name. Gross. ^ _^",
-		"Look at you sprint. All that effort just to end up on the floor later. ᵔ⤙ᵔ",
-		"Fifteen minutes clean. I'm bored waiting for you to fail. ^ _^",
-		"You're dodging like your life depends on it. Well, it does. ᵔ⤙ᵔ",
-		"Still not dead? You're really stretching this run out. ^ _^",
-		"You’ve gone this long without a scratch. Just makes the fall funnier. ᵔ⤙ᵔ",
-		"No hits at all. Are the twisteds even trying right now? ^ _^",
-		"Still standing? Fine. Just makes the eventual hit hurt more. ᵔ⤙ᵔ"
+		"Fifteen minutes, no damage. Who taught you to play like that? ^ _^",
+		"Okay, I'm officially impressed. Not one hit. ᵔ⤙ᵔ",
+		"Fifteen minutes clean. They must be so frustrated right now. ^ _^",
+		"You're kind of carrying this whole thing, you know. ᵔ⤙ᵔ",
+		"Still untouched. I'm starting to think you're a ghost. ^ _^",
+		"This is a seriously good run. Don't let it get to your head. ᵔ⤙ᵔ",
+		"I keep waiting for something to go wrong and it just doesn't. ^ _^",
+		"Fifteen minutes of perfect dodging. Show-off. ᵔ⤙ᵔ",
+		"Not a single scratch. Remind me to never bet against you. ^ _^",
+		"Whatever you're doing, it's working. Keep it up. ᵔ⤙ᵔ"
+	},
+	MachineStart = {
+		"Good, a machine. Get it going.",
+		"Okay, you work, I'll keep an ear out.",
+		"Nice. Stay focused on that one.",
+		"Machine time. Don't let anything sneak up on you.",
+		"That's progress. Keep at it.",
+		"Every machine counts. Go on.",
+		"I'll watch the hallway. Mostly.",
+		"Steady hands. You've got this."
+	},
+	ItemPickup = {
+		"Ooh, grab that.",
+		"Good find. Hang on to it.",
+		"That'll come in handy.",
+		"Pockets getting full? Good.",
+		"Nice, I didn't even see that.",
+		"Free stuff. My favorite.",
+		"Keep that for later. Trust me."
+	},
+	CloseCall = {
+		"Hey. Hey. Something's right next to you.",
+		"Too close. Move, move, move.",
+		"Don't look back, just go.",
+		"Okay, that's way too close for my liking.",
+		"Something's right on top of you. Go.",
+		"I really don't like how close that is.",
+		"Run now, talk later."
+	},
+	Running = {
+		"Where are we going in such a hurry?",
+		"Look at you go.",
+		"Running is good. Running into things is less good.",
+		"Keep that pace up and nothing's catching you.",
+		"Don't forget to breathe while you're sprinting.",
+		"Fast. I like it."
+	},
+	Idle = {
+		"You've been standing still a while. Everything okay?",
+		"Taking a breather? Fair enough.",
+		"Hello? Still with me?",
+		"Not to rush you, but the floor isn't going to clear itself.",
+		"Hiding is valid. Just don't stay too long.",
+		"It's quiet. Maybe a little too quiet to just stand here."
 	}
 }
 
-local zeroWrapper = Instance.new("Frame")
-zeroWrapper.Size = UDim2.new(0, 240, 0, 56)
-zeroWrapper.Position = UDim2.new(0.5, -120, 0, -2) 
-zeroWrapper.BackgroundColor3 = Color3.fromRGB(10, 5, 14)
-zeroWrapper.BorderSizePixel = 0
-zeroWrapper.BackgroundTransparency = 1
-zeroWrapper.ZIndex = 15
-zeroWrapper.Parent = screenGui
+local DialogueCooldowns = {
+	MachineStart = 45,
+	ItemPickup = 30,
+	CloseCall = 40,
+	Running = 90,
+	Idle = 120
+}
 
-local zeroCorner = Instance.new("UICorner")
-zeroCorner.CornerRadius = UDim.new(0, 4)
-zeroCorner.Parent = zeroWrapper
+local VOEUX_POS_SHOWN = UDim2.new(0.5, -182, 0, 6)
+local VOEUX_POS_HIDDEN = UDim2.new(0.5, -182, 0, -10)
 
-local zeroStroke = Instance.new("UIStroke")
-zeroStroke.Color = COLOR_ACTIVE
-zeroStroke.Thickness = 1
-zeroStroke.Transparency = 1
-zeroStroke.Parent = zeroWrapper
+local COLOR_AERO_SKY = Color3.fromRGB(120, 195, 245)
+local COLOR_AERO_DEEP = Color3.fromRGB(55, 95, 215)
+local COLOR_AERO_TEXT = Color3.fromRGB(20, 45, 90)
+local COLOR_VOEUX_YELLOW = Color3.fromRGB(255, 205, 45)
+local COLOR_VOEUX_ORANGE = Color3.fromRGB(245, 150, 30)
+local COLOR_VOEUX_TIE = Color3.fromRGB(220, 35, 35)
 
-local zeroAccent = Instance.new("Frame")
-zeroAccent.Size = UDim2.new(0, 3, 1, 0)
-zeroAccent.Position = UDim2.new(0, 0, 0, 0)
-zeroAccent.BackgroundColor3 = COLOR_ACTIVE
-zeroAccent.BorderSizePixel = 0
-zeroAccent.BackgroundTransparency = 1
-zeroAccent.ZIndex = 16
-zeroAccent.Parent = zeroWrapper
+local function addCorner(obj, radius)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = radius
+	c.Parent = obj
+	return c
+end
 
-local zeroHeader = Instance.new("TextLabel")
-zeroHeader.Size = UDim2.new(1, -12, 0, 14)
-zeroHeader.Position = UDim2.new(0, 8, 0, 4)
-zeroHeader.BackgroundTransparency = 1
-zeroHeader.Text = "[ <0> ]"
-zeroHeader.TextColor3 = COLOR_ACTIVE
-zeroHeader.TextTransparency = 1
-zeroHeader.Font = Enum.Font.Code
-zeroHeader.TextSize = 11
-zeroHeader.TextXAlignment = Enum.TextXAlignment.Left
-zeroHeader.ZIndex = 16
-zeroHeader.Parent = zeroWrapper
+local function addGradient(obj, c0, c1, rotation)
+	local g = Instance.new("UIGradient")
+	g.Color = ColorSequence.new(c0, c1)
+	g.Rotation = rotation or 90
+	g.Parent = obj
+	return g
+end
 
-local zeroText = Instance.new("TextLabel")
-zeroText.Size = UDim2.new(1, -14, 1, -20)
-zeroText.Position = UDim2.new(0, 8, 0, 18)
-zeroText.BackgroundTransparency = 1
-zeroText.Text = ""
-zeroText.TextColor3 = Color3.fromRGB(210, 200, 225)
-zeroText.TextTransparency = 1
-zeroText.Font = Enum.Font.Code
-zeroText.TextSize = 10
-zeroText.TextXAlignment = Enum.TextXAlignment.Left
-zeroText.TextYAlignment = Enum.TextYAlignment.Top
-zeroText.TextWrapped = true
-zeroText.ZIndex = 16
-zeroText.Parent = zeroWrapper
+local voeuxGroup = Instance.new("CanvasGroup")
+voeuxGroup.Size = UDim2.new(0, 364, 0, 112)
+voeuxGroup.Position = VOEUX_POS_HIDDEN
+voeuxGroup.BackgroundTransparency = 1
+voeuxGroup.GroupTransparency = 1
+voeuxGroup.ZIndex = 15
+voeuxGroup.Parent = screenGui
+
+local voeuxWindow = Instance.new("Frame")
+voeuxWindow.Size = UDim2.new(1, -4, 1, -4)
+voeuxWindow.Position = UDim2.new(0, 2, 0, 2)
+voeuxWindow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+voeuxWindow.BorderSizePixel = 0
+voeuxWindow.Parent = voeuxGroup
+addCorner(voeuxWindow, UDim.new(0, 12))
+addGradient(voeuxWindow, Color3.fromRGB(245, 250, 255), Color3.fromRGB(200, 225, 248))
+
+local voeuxStroke = Instance.new("UIStroke")
+voeuxStroke.Color = Color3.fromRGB(255, 255, 255)
+voeuxStroke.Thickness = 1.5
+voeuxStroke.Transparency = 0.1
+voeuxStroke.Parent = voeuxWindow
+
+-- Title bar, styled like an old glossy messenger window
+local voeuxTitleBar = Instance.new("Frame")
+voeuxTitleBar.Size = UDim2.new(1, 0, 0, 22)
+voeuxTitleBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+voeuxTitleBar.BorderSizePixel = 0
+voeuxTitleBar.Parent = voeuxWindow
+addCorner(voeuxTitleBar, UDim.new(0, 12))
+addGradient(voeuxTitleBar, Color3.fromRGB(125, 160, 245), COLOR_AERO_DEEP)
+
+local voeuxTitleFill = Instance.new("Frame")
+voeuxTitleFill.Size = UDim2.new(1, 0, 0, 10)
+voeuxTitleFill.Position = UDim2.new(0, 0, 1, -10)
+voeuxTitleFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+voeuxTitleFill.BorderSizePixel = 0
+voeuxTitleFill.Parent = voeuxTitleBar
+addGradient(voeuxTitleFill, Color3.fromRGB(85, 120, 228), COLOR_AERO_DEEP)
+
+local voeuxTitleGloss = Instance.new("Frame")
+voeuxTitleGloss.Size = UDim2.new(1, -8, 0, 9)
+voeuxTitleGloss.Position = UDim2.new(0, 4, 0, 2)
+voeuxTitleGloss.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+voeuxTitleGloss.BackgroundTransparency = 0.6
+voeuxTitleGloss.BorderSizePixel = 0
+voeuxTitleGloss.ZIndex = 2
+voeuxTitleGloss.Parent = voeuxTitleBar
+addCorner(voeuxTitleGloss, UDim.new(1, 0))
+
+local voeuxOrb = Instance.new("Frame")
+voeuxOrb.Size = UDim2.new(0, 14, 0, 14)
+voeuxOrb.Position = UDim2.new(0, 7, 0, 4)
+voeuxOrb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+voeuxOrb.BorderSizePixel = 0
+voeuxOrb.ZIndex = 3
+voeuxOrb.Parent = voeuxTitleBar
+addCorner(voeuxOrb, UDim.new(1, 0))
+addGradient(voeuxOrb, Color3.fromRGB(255, 240, 140), Color3.fromRGB(240, 170, 20))
+
+local voeuxOrbShine = Instance.new("Frame")
+voeuxOrbShine.Size = UDim2.new(0, 6, 0, 4)
+voeuxOrbShine.Position = UDim2.new(0, 3, 0, 2)
+voeuxOrbShine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+voeuxOrbShine.BackgroundTransparency = 0.2
+voeuxOrbShine.BorderSizePixel = 0
+voeuxOrbShine.ZIndex = 4
+voeuxOrbShine.Parent = voeuxOrb
+addCorner(voeuxOrbShine, UDim.new(1, 0))
+
+local voeuxHeader = Instance.new("TextLabel")
+voeuxHeader.Size = UDim2.new(1, -34, 1, 0)
+voeuxHeader.Position = UDim2.new(0, 27, 0, 0)
+voeuxHeader.BackgroundTransparency = 1
+voeuxHeader.Text = "Vœux"
+voeuxHeader.TextColor3 = Color3.fromRGB(255, 255, 255)
+voeuxHeader.TextStrokeColor3 = Color3.fromRGB(30, 50, 140)
+voeuxHeader.TextStrokeTransparency = 0.7
+voeuxHeader.Font = Enum.Font.GothamBold
+voeuxHeader.TextSize = 12
+voeuxHeader.TextXAlignment = Enum.TextXAlignment.Left
+voeuxHeader.ZIndex = 3
+voeuxHeader.Parent = voeuxTitleBar
+
+-- Sprite stage (left half): white sky over a blue horizon, like the logo
+local voeuxStage = Instance.new("Frame")
+voeuxStage.Size = UDim2.new(0, 150, 1, -32)
+voeuxStage.Position = UDim2.new(0, 6, 0, 27)
+voeuxStage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+voeuxStage.BorderSizePixel = 0
+voeuxStage.ClipsDescendants = true
+voeuxStage.Parent = voeuxWindow
+addCorner(voeuxStage, UDim.new(0, 10))
+addGradient(voeuxStage, Color3.fromRGB(160, 215, 250), COLOR_AERO_SKY)
+
+local voeuxSkyDome = Instance.new("Frame")
+voeuxSkyDome.Size = UDim2.new(1.3, 0, 1.1, 0)
+voeuxSkyDome.Position = UDim2.new(-0.05, 0, -0.55, 0)
+voeuxSkyDome.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+voeuxSkyDome.BackgroundTransparency = 0.15
+voeuxSkyDome.BorderSizePixel = 0
+voeuxSkyDome.Parent = voeuxStage
+addCorner(voeuxSkyDome, UDim.new(1, 0))
+addGradient(voeuxSkyDome, Color3.fromRGB(255, 255, 255), Color3.fromRGB(215, 235, 250))
+
+local voeuxRoot = Instance.new("Frame")
+voeuxRoot.Size = UDim2.new(0, 2, 0, 2)
+voeuxRoot.AnchorPoint = Vector2.new(0.5, 0.5)
+voeuxRoot.Position = UDim2.new(0.5, 0, 0.5, 3)
+voeuxRoot.BackgroundTransparency = 1
+voeuxRoot.ZIndex = 2
+voeuxRoot.Parent = voeuxStage
+
+local function makeBodyPart(size, pos, color, z, parent)
+	local part = Instance.new("Frame")
+	part.Size = size
+	part.Position = pos
+	part.BackgroundColor3 = color
+	part.BorderSizePixel = 0
+	part.ZIndex = z
+	part.Parent = parent or voeuxRoot
+	return part
+end
+
+-- Limbs hang from a small pivot frame so rotating the pivot swings them at the joint
+local function makeLimb(jointX, jointY, length, width, color, z)
+	local pivot = Instance.new("Frame")
+	pivot.Size = UDim2.new(0, width, 0, width)
+	pivot.AnchorPoint = Vector2.new(0.5, 0.5)
+	pivot.Position = UDim2.new(0, jointX, 0, jointY)
+	pivot.BackgroundTransparency = 1
+	pivot.ZIndex = z
+	pivot.Parent = voeuxRoot
+
+	local limb = makeBodyPart(UDim2.new(0, width, 0, length), UDim2.new(0, 0, 0, width / 2), color, z, pivot)
+	addCorner(limb, UDim.new(0, width / 2))
+	return pivot
+end
+
+local voeuxArmBack = makeLimb(1, -12, 18, 6, COLOR_VOEUX_ORANGE, 1)
+local voeuxLegBack = makeLimb(1, 4, 22, 7, COLOR_VOEUX_ORANGE, 1)
+
+local voeuxTorso = makeBodyPart(UDim2.new(0, 13, 0, 22), UDim2.new(0, -5, 0, -16), COLOR_VOEUX_YELLOW, 2)
+addCorner(voeuxTorso, UDim.new(0, 6))
+local voeuxTie = makeBodyPart(UDim2.new(0, 3, 0, 13), UDim2.new(0, 6, 0, 2), COLOR_VOEUX_TIE, 3, voeuxTorso)
+voeuxTie.Rotation = -12
+
+local voeuxHead = makeBodyPart(UDim2.new(0, 18, 0, 18), UDim2.new(0, -7, 0, -36), COLOR_VOEUX_YELLOW, 3)
+addCorner(voeuxHead, UDim.new(1, 0))
+addGradient(voeuxHead, Color3.fromRGB(255, 235, 120), COLOR_VOEUX_YELLOW, 120)
+local voeuxHeadShine = makeBodyPart(UDim2.new(0, 7, 0, 4), UDim2.new(0, 4, 0, 2), Color3.fromRGB(255, 255, 255), 4, voeuxHead)
+voeuxHeadShine.BackgroundTransparency = 0.3
+addCorner(voeuxHeadShine, UDim.new(1, 0))
+
+local voeuxSmile = Instance.new("TextLabel")
+voeuxSmile.Size = UDim2.new(0, 8, 0, 10)
+voeuxSmile.Position = UDim2.new(0, 7, 0, 5)
+voeuxSmile.BackgroundTransparency = 1
+voeuxSmile.Text = ")"
+voeuxSmile.Rotation = 90
+voeuxSmile.TextColor3 = Color3.fromRGB(60, 35, 10)
+voeuxSmile.Font = Enum.Font.GothamBold
+voeuxSmile.TextSize = 10
+voeuxSmile.ZIndex = 4
+voeuxSmile.Parent = voeuxHead
+
+local voeuxLegFront = makeLimb(2, 4, 22, 7, COLOR_VOEUX_YELLOW, 4)
+local voeuxArmFront = makeLimb(2, -12, 18, 6, COLOR_VOEUX_YELLOW, 4)
+
+-- Speech area (right half)
+local voeuxBubble = Instance.new("Frame")
+voeuxBubble.Size = UDim2.new(1, -172, 1, -32)
+voeuxBubble.Position = UDim2.new(0, 164, 0, 27)
+voeuxBubble.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+voeuxBubble.BackgroundTransparency = 0.25
+voeuxBubble.BorderSizePixel = 0
+voeuxBubble.Parent = voeuxWindow
+addCorner(voeuxBubble, UDim.new(0, 10))
+
+local voeuxBubbleStroke = Instance.new("UIStroke")
+voeuxBubbleStroke.Color = COLOR_AERO_SKY
+voeuxBubbleStroke.Transparency = 0.4
+voeuxBubbleStroke.Parent = voeuxBubble
+
+local voeuxText = Instance.new("TextLabel")
+voeuxText.Size = UDim2.new(1, -16, 1, -18)
+voeuxText.Position = UDim2.new(0, 8, 0, 5)
+voeuxText.BackgroundTransparency = 1
+voeuxText.Text = ""
+voeuxText.TextColor3 = COLOR_AERO_TEXT
+voeuxText.Font = Enum.Font.Gotham
+voeuxText.TextSize = 12
+voeuxText.TextXAlignment = Enum.TextXAlignment.Left
+voeuxText.TextYAlignment = Enum.TextYAlignment.Top
+voeuxText.TextWrapped = true
+voeuxText.ZIndex = 2
+voeuxText.Parent = voeuxBubble
+
+local voeuxProgress = Instance.new("Frame")
+voeuxProgress.Size = UDim2.new(1, -16, 0, 5)
+voeuxProgress.Position = UDim2.new(0, 8, 1, -10)
+voeuxProgress.BackgroundColor3 = Color3.fromRGB(215, 225, 240)
+voeuxProgress.BorderSizePixel = 0
+voeuxProgress.ZIndex = 2
+voeuxProgress.Parent = voeuxBubble
+addCorner(voeuxProgress, UDim.new(1, 0))
+
+local voeuxProgressFill = Instance.new("Frame")
+voeuxProgressFill.Size = UDim2.new(0, 0, 1, 0)
+voeuxProgressFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+voeuxProgressFill.BorderSizePixel = 0
+voeuxProgressFill.ZIndex = 3
+voeuxProgressFill.Parent = voeuxProgress
+addCorner(voeuxProgressFill, UDim.new(1, 0))
+addGradient(voeuxProgressFill, Color3.fromRGB(110, 140, 245), COLOR_AERO_DEEP)
+
+local CategoryMoods = {
+	Health2 = "Hurt", Health1 = "Hurt", Dead = "Down",
+	HealMinor = "Happy", HealMajor = "Happy", Affec1 = "Happy", Affec2 = "Happy", ItemPickup = "Happy",
+	CloseCall = "Run", Running = "Run",
+	MachineStart = "Walk", Casual = "Walk", Idle = "Walk"
+}
+
+local voeuxMood = "Walk"
+
+-- Each pose returns: root bob, root lean, front arm, back arm, front leg, back leg (degrees)
+local VoeuxPoses = {
+	Walk = function(t)
+		local s = math.sin(t * 5)
+		return math.abs(s) * 2, 8, 30 * s, -30 * s, -25 * s, 25 * s
+	end,
+	Run = function(t)
+		local s = math.sin(t * 13)
+		return math.abs(s) * 3, 18, 55 * s, -55 * s, -45 * s, 45 * s
+	end,
+	Happy = function(t)
+		local s = math.sin(t * 7)
+		local wave = 15 * math.sin(t * 14)
+		return -math.abs(s) * 5, 0, 150 + wave, -150 - wave, -10 * s, 10 * s
+	end,
+	Hurt = function(t)
+		local s = math.sin(t * 2)
+		return 3 + s, -6, 8 + 4 * s, -8 - 4 * s, -6 * s, 6 * s
+	end,
+	Down = function()
+		return 16, 80, -20, 20, -10, 10
+	end
+}
+
+table.insert(connections, RunService.RenderStepped:Connect(function()
+	if shuttingDown or voeuxGroup.GroupTransparency >= 1 then return end
+	local pose = VoeuxPoses[voeuxMood] or VoeuxPoses.Walk
+	local bob, lean, armF, armB, legF, legB = pose(tick())
+	voeuxRoot.Position = UDim2.new(0.5, 0, 0.5, 3 + bob)
+	voeuxRoot.Rotation = lean
+	voeuxArmFront.Rotation = armF
+	voeuxArmBack.Rotation = armB
+	voeuxLegFront.Rotation = legF
+	voeuxLegBack.Rotation = legB
+end))
 
 local soundSonarStart = Instance.new("Sound")
 soundSonarStart.SoundId = "https://assetdelivery.roblox.com/v1/asset/?id=108463235109016"
 soundSonarStart.Volume = 0.55
-soundSonarStart.Parent = zeroWrapper
+soundSonarStart.Parent = voeuxGroup
 
 local soundTypewriter = Instance.new("Sound")
 soundTypewriter.SoundId = "https://assetdelivery.roblox.com/v1/asset/?id=128333756908969"
 soundTypewriter.Volume = 0.25
 soundTypewriter.PlaybackSpeed = 1.0
-soundTypewriter.Parent = zeroWrapper
+soundTypewriter.Parent = voeuxGroup
 
 local chatQueue = {}
 local isChatting = false
 local chatHideTween = nil
 
-local function updateZeroUIState(visible)
-	local ti = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	local trans = visible and 0 or 1
-	local bgTrans = visible and 0.2 or 1
-	TweenService:Create(zeroWrapper, ti, {BackgroundTransparency = bgTrans}):Play()
-	TweenService:Create(zeroStroke, ti, {Transparency = visible and 0.4 or 1}):Play()
-	TweenService:Create(zeroAccent, ti, {BackgroundTransparency = trans}):Play()
-	TweenService:Create(zeroHeader, ti, {TextTransparency = trans}):Play()
-	TweenService:Create(zeroText, ti, {TextTransparency = trans}):Play()
+local function updateVoeuxUIState(visible, delayTime)
+	local ti = visible
+		and TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+		or TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, delayTime or 0)
+	local groupTween = TweenService:Create(voeuxGroup, ti, {
+		GroupTransparency = visible and 0 or 1,
+		Position = visible and VOEUX_POS_SHOWN or VOEUX_POS_HIDDEN
+	})
+	groupTween:Play()
+	return groupTween
 end
 
 local function processChat()
@@ -524,19 +754,23 @@ local function processChat()
 	isChatting = true
 	
 	if chatHideTween then chatHideTween:Cancel() end
-	updateZeroUIState(true)
+	updateVoeuxUIState(true)
 	
 	pcall(function() soundSonarStart:Play() end)
 	
-	local message = chatQueue[1]
+	local entry = chatQueue[1]
 	table.remove(chatQueue, 1)
+	local message = entry.text
+	voeuxMood = entry.mood
 	
-	zeroText.Text = ""
+	voeuxText.Text = ""
+	voeuxProgressFill.Size = UDim2.new(0, 0, 1, 0)
 	local charWait = 0.02
 	
 	for i = 1, #message do
-		if shuttingDown then break end
-		zeroText.Text = string.sub(message, 1, i)
+		if shuttingDown or not toggleStates.Responses then break end
+		voeuxText.Text = string.sub(message, 1, i)
+		voeuxProgressFill.Size = UDim2.new(i / #message, 0, 1, 0)
 		if i % 2 == 0 then
 			pcall(function()
 				soundTypewriter.PlaybackSpeed = math.random(95, 110) / 100
@@ -546,31 +780,30 @@ local function processChat()
 		task.wait(charWait)
 	end
 	
-	task.wait(math.clamp(#message * 0.06, 2, 4))
+	if toggleStates.Responses then
+		voeuxText.Text = message
+		voeuxProgressFill.Size = UDim2.new(1, 0, 1, 0)
+		task.wait(math.clamp(#message * 0.06, 2, 4))
+	end
 	
 	isChatting = false
 	if #chatQueue > 0 then
 		processChat()
 	else
-		chatHideTween = TweenService:Create(zeroWrapper, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 1.5), {BackgroundTransparency = 1})
-		chatHideTween:Play()
-		TweenService:Create(zeroStroke, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 1.5), {Transparency = 1}):Play()
-		TweenService:Create(zeroAccent, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 1.5), {BackgroundTransparency = 1}):Play()
-		TweenService:Create(zeroHeader, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 1.5), {TextTransparency = 1}):Play()
-		TweenService:Create(zeroText, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 1.5), {TextTransparency = 1}):Play()
+		chatHideTween = updateVoeuxUIState(false, 1.5)
 	end
 end
 
 local lastCategoryTick = {}
 local function queueDialogue(category)
-	if shuttingDown then return end
-	if lastCategoryTick[category] and tick() - lastCategoryTick[category] < 7.5 then return end 
+	if shuttingDown or not toggleStates.Responses then return end
+	if lastCategoryTick[category] and tick() - lastCategoryTick[category] < (DialogueCooldowns[category] or 7.5) then return end 
 	lastCategoryTick[category] = tick()
 	
 	local lines = DialogueLines[category]
 	if lines then
 		local selected = lines[math.random(1, #lines)]
-		table.insert(chatQueue, selected)
+		table.insert(chatQueue, {text = selected, mood = CategoryMoods[category] or "Walk"})
 		if not isChatting then
 			task.spawn(processChat)
 		end
@@ -581,14 +814,20 @@ local lastHealth = 0
 local lastHitTick = tick()
 local lastAffec1Tick = 0
 local lastAffec2Tick = 0
+local voeuxHumanoid = nil
+local movingSince = nil
+local stillSince = tick()
 
-local function bindZeroLogicToCharacter(char)
+local function bindVoeuxLogicToCharacter(char)
 	if not char then return end
 	local hum = char:WaitForChild("Humanoid", 5)
 	if not hum then return end
 	
 	lastHealth = hum.Health
 	lastHitTick = tick()
+	voeuxHumanoid = hum
+	movingSince = nil
+	stillSince = tick()
 	
 	hum.HealthChanged:Connect(function(newHealth)
 		if shuttingDown then return end
@@ -614,8 +853,21 @@ local function bindZeroLogicToCharacter(char)
 	end)
 end
 
-if player.Character then bindZeroLogicToCharacter(player.Character) end
-player.CharacterAdded:Connect(bindZeroLogicToCharacter)
+if player.Character then bindVoeuxLogicToCharacter(player.Character) end
+player.CharacterAdded:Connect(bindVoeuxLogicToCharacter)
+
+local function onVoeuxPromptUsed(prompt, plr)
+	if shuttingDown or plr ~= player or not prompt then return end
+	local parentModel = prompt:FindFirstAncestorWhichIsA("Model")
+	if parentModel and (TrackedEntities.Machines[parentModel] or isMachine(parentModel)) then
+		queueDialogue("MachineStart")
+	elseif prompt.ActionText ~= "" and isItemAllowed(prompt.ActionText) then
+		queueDialogue("ItemPickup")
+	end
+end
+
+table.insert(connections, ProximityPromptService.PromptButtonHoldBegan:Connect(onVoeuxPromptUsed))
+table.insert(connections, ProximityPromptService.PromptTriggered:Connect(onVoeuxPromptUsed))
 
 task.spawn(function()
 	while task.wait(50) do
@@ -1505,6 +1757,7 @@ local function executeToggleLogic(id, state)
 	elseif id == "Stat_HUD" then statHudFrame.Visible = state
 	elseif id == "Instant_Interact" then updateProximityPrompts()
 	elseif id == "Editor" then configEditorFrame.Visible = state
+	elseif id == "Responses" then if not state then table.clear(chatQueue) end
 	elseif id == "Advanced_Radar" then
 		if not state then
 			threatRingStroke.Transparency = 1
@@ -1818,7 +2071,8 @@ createToggle("Instant_Interact", "Instant_Interact", 7)
 createToggle("Auto_Escape", "Auto_Escape", 8)
 createToggle("Advanced_Radar", "Advanced_Radar", 9)
 createToggle("Hide_Radar", "Hide_Radar", 10)
-createToggle("Editor", "Editor", 11)
+createToggle("Responses", "Responses", 11)
+createToggle("Editor", "Editor", 12)
 
 local fadeTweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
 local cachedBlips = {} 
@@ -2105,11 +2359,7 @@ local function startYellowTransition()
 			TweenService:Create(extOuterStroke, fadeOutTI, {Transparency = 1}):Play()
 			TweenService:Create(extSideL, fadeOutTI, {BackgroundTransparency = 1}):Play()
 			TweenService:Create(extSideR, fadeOutTI, {BackgroundTransparency = 1}):Play()
-			TweenService:Create(zeroWrapper, fadeOutTI, {BackgroundTransparency = 1}):Play()
-			TweenService:Create(zeroStroke, fadeOutTI, {Transparency = 1}):Play()
-			TweenService:Create(zeroAccent, fadeOutTI, {BackgroundTransparency = 1}):Play()
-			TweenService:Create(zeroHeader, fadeOutTI, {TextTransparency = 1}):Play()
-			TweenService:Create(zeroText, fadeOutTI, {TextTransparency = 1}):Play()
+			TweenService:Create(voeuxGroup, fadeOutTI, {GroupTransparency = 1}):Play()
 			for _, item in ipairs(toggleList) do 
 				if item.label then TweenService:Create(item.label, fadeOutTI, {TextTransparency = 1}):Play() end
 				if item.badge then TweenService:Create(item.badge, fadeOutTI, {TextTransparency = 1}):Play() end
@@ -2331,6 +2581,9 @@ local function executeRadarTick()
 		if blipType == "Twisted" and dist2D < nearestTwistedDist then
 			nearestTwistedDist = dist2D
 		end
+		if blipType == "Twisted" and dist2D <= 15 then
+			queueDialogue("CloseCall")
+		end
 
 		if dist2D <= radarRange or toggleStates.Advanced_Radar then
 			seenTargets[targetObj] = true
@@ -2463,6 +2716,22 @@ table.insert(connections, RunService.Heartbeat:Connect(function()
 		elseif timeSinceDamage >= 300 and timeSinceDamage < 900 and (tick() - lastAffec1Tick > 90) then
 			lastAffec1Tick = tick()
 			queueDialogue("Affec1")
+		end
+	end
+
+	if voeuxHumanoid and voeuxHumanoid.Parent and voeuxHumanoid.Health > 0 then
+		if voeuxHumanoid.MoveDirection.Magnitude > ANALOG_DEADZONE then
+			stillSince = nil
+			movingSince = movingSince or tick()
+			if tick() - movingSince >= 12 and not isChatting then
+				queueDialogue("Running")
+			end
+		else
+			movingSince = nil
+			stillSince = stillSince or tick()
+			if tick() - stillSince >= 40 and not isChatting then
+				queueDialogue("Idle")
+			end
 		end
 	end
 
