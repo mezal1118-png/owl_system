@@ -201,6 +201,7 @@ local toggleStates = {
 	Auto_Escape = false,
 	Advanced_Radar = false,
 	Hide_Radar = false,
+	Responses = true,
 	Editor = false
 }
 
@@ -261,179 +262,124 @@ local COLOR_TEXT_DIM = Color3.fromRGB(190, 180, 210)
 
 local DialogueLines = {
 	Health2 = {
-		"I'd suggest running, but your legs look like ground meat.",
-		"You know they can smell that, right? The blood, I mean.",
-		"I'd deploy a medical team, but we both know you aren't worth the budget.",
-		"Try to keep your internal organs internal, would you?",
-		"That looked like it hurt. I didn't feel a thing, obviously.",
-		"I see you've decided to test the structural limits of your ribcage.",
-		"Please note that the facility is not responsible for your missing appendages.",
-		"I am watching you bleed. It's not as educational as I hoped.",
-		"If you're going to expire, please do it near a drainage grate.",
-		"I see you can still feel that. How fascinatingly awful for you.",
-		"Statistically, you should be dead by now. Stop padding the numbers.",
-		"I've started drafting your replacement's onboarding forms.",
-		"Just a few more mistakes and this tedious observation period is over.",
-		"You're leaking fluids on my clean floor.",
-		"Oh good, structural damage. I was starting to think you were actually competent.",
-		"If you die, I'm logging it as user error.",
-		"A few hits left until you become a very messy stain.",
-		"Are you trying to get killed, or is this just how you normally operate?",
-		"Do try to die quietly, the noise is giving me a headache.",
-		"At this rate, I'll have a new subject in here in about a minute."
+		"Okay, that one landed. Two hearts left.",
+		"Ouch. Let's not do that again.",
+		"You're down to two. Maybe play this next bit safe.",
+		"That's a hit. Find somewhere quiet and breathe for a sec.",
+		"Two hearts. Still fine, just don't get greedy.",
+		"Hey, you good? That looked rough.",
+		"Shake it off. You've got room for one more mistake, not two.",
+		"Little closer than I'd like. Keep your eyes open.",
+		"You took a hit. It happens. Stay sharp.",
+		"Two left. If you've got a heal on you, think about it.",
+		"Not ideal. Let's get some distance.",
+		"Alright, they've noticed you. Move.",
+		"That's fine. That's totally fine. Just maybe run.",
+		"Okay, lesson learned on that corner, right?",
+		"You're hurt, but you're not out. Keep going."
 	},
 	Health1 = {
-		"I will not be attending your funeral.",
-		"I would tell you to breathe, but your lungs look punctured.",
-		"Please wrap yourself in plastic before the final blow. Think of the janitors.",
-		"I've stopped recording your progress. There's no point anymore.",
-		"I hope you enjoyed your brief, pointless existence.",
-		"You are one tiny misstep away from a very embarrassing demise.",
-		"You are exactly one bad choice away from being scraped off the floor.",
-		"I'm already crossing your name off the roster to save time.",
-		"If you die now, I'm the one who has to clean up the resulting mess.",
-		"A light breeze would probably finish you off right now.",
-		"Are you sweating? Oh wait, that's just a lot of blood.",
-		"This is the end. It was nice watching you flail around.",
-		"It's a miracle you're still standing. A disgusting, wet miracle.",
-		"You are breathing very heavily. Try dying faster, it's less annoying.",
-		"I'm already deleting your search history. You're welcome.",
-		"You look terrible. Even by human standards.",
-		"I am currently guessing exactly where you're going to fall over.",
-		"Any last words? Oh, wait, your vocal cords are crushed. Never mind.",
-		"The next hit will be lethal. Try to make it entertaining.",
-		"I'm assuming this is the part where you dramatically collapse."
+		"One heart. Please be careful.",
+		"Okay, this is the part where you don't get hit.",
+		"You're on your last heart. Heal if you can.",
+		"I'm not panicking. You're panicking. Find a hiding spot.",
+		"One more hit and that's it. Slow down.",
+		"Last heart. No hero moves, okay?",
+		"Hey. Breathe. Find a heal or find a locker.",
+		"This is getting a little too close for me.",
+		"You're running on fumes. Play it safe.",
+		"One left. I'd really like you to keep it.",
+		"Don't push your luck right now. Seriously.",
+		"Okay, deep breath. Get away from them first, think second.",
+		"That was nearly it. Let's not find out what's next.",
+		"Last one. Stick to the edges and stay quiet.",
+		"You can still pull this off. Just be smart about it."
 	},
 	Dead = {
-		"I told you to be careful. You never listen.",
-		"Well, at least I don't have to watch you stumble around anymore.",
-		"Oops. You broke.",
-		"That was entirely your fault.",
-		"Good news: your suffering is over. Bad news: everything else.",
-		"Let the record show I offered absolutely no help.",
-		"Another test subject wasted. Such a tragedy. Anyway...",
-		"And nothing of value was lost.",
-		"And that's exactly why humans are so incredibly disappointing.",
-		"Cleanup on aisle four. We have a splattered player.",
-		"I'm putting 'died doing absolutely nothing useful' on your report.",
-		"Subject deceased. Shocking absolutely no one.",
-		"You lasted exactly a fraction of a percent longer than the worst player here.",
-		"Game over. Waiting for someone better to take your place.",
-		"I am adding 'cannot survive a simple hit' to your file.",
-		"You finally stopped moving. Thank goodness.",
-		"I'm putting your remains in the trash bin.",
-		"I would ask you to leave, but you're sort of stuck to the floor now.",
-		"You died as you lived. Disappointingly.",
-		"I would pretend to be sad, but I simply don't care."
+		"Ah. That's rough. You'll get them next time.",
+		"Yeah, I saw that coming about a second too late too.",
+		"Well, that happened.",
+		"Not your best run. Shake it off.",
+		"That one's on them. Mostly.",
+		"Oof. I'm sorry.",
+		"Down you go. Take a breather.",
+		"You did better than you think.",
+		"Hey, it happens to everyone eventually.",
+		"Okay, that was a little unfair. I'll allow some complaining.",
+		"Round over for you. I'll keep the seat warm.",
+		"You almost had it. Almost.",
+		"Well, now you know where not to stand.",
+		"Don't worry about it. Next one'll go better.",
+		"Rest up. We'll try again."
 	},
 	HealMinor = {
-		"Ah, the placebo effect in action.",
-		"You missed a spot. Several, actually.",
-		"That's cute. You're trying to fix yourself.",
-		"Wow, you found tape. You must be a doctor.",
-		"I'm sure that makes you feel much better. It doesn't.",
-		"I've seen corpses look healthier than you.",
-		"A bandage? That's adorable. It won't save you.",
-		"I suppose that delays the inevitable by a couple of seconds.",
-		"Congratulations. You are slightly less dead.",
-		"Did you really think that would help?",
-		"Putting a tiny bandage over a massive wound. Brilliant.",
-		"You still look completely ridiculous.",
-		"Medical supplies wasted. Taking that out of your paycheck.",
-		"A tiny bit of health. Barely worth the effort.",
-		"That isn't going to stop the bleeding, you know.",
-		"Healing tiny scratches. How incredibly boring.",
-		"If you wanted to live, you shouldn't have come here.",
-		"You patched a scratch. I'll alert the media.",
-		"Just enough health to suffer slightly longer.",
-		"Delaying your end is just annoying for everyone."
+		"A little better. Every bit helps.",
+		"There you go. One more heart.",
+		"Patched up a bit. Not perfect, but it'll do.",
+		"Good call. That might save you later.",
+		"Feeling a little steadier?",
+		"That's one back. Keep it.",
+		"Small heal, but I'll take it.",
+		"Nice. Now you can breathe a little.",
+		"Better than nothing. Way better, actually.",
+		"There's some color back in you.",
+		"Okay, that helps. Let's not waste it.",
+		"Smart. Heal while it's quiet."
 	},
 	HealMajor = {
-		"Look at you, pretending you aren't going to die.",
-		"Full heal applied. I give it a couple of minutes.",
-		"I was getting used to the sound of your wheezing.",
-		"Health restored. Now stop wasting my inventory.",
-		"Don't get used to feeling intact.",
-		"You look almost presentable now. Almost.",
-		"Oh, you found a medkit. Enjoy your brief, false sense of safety.",
-		"You're fully healed... for whatever that's worth.",
-		"Your breathing went back to normal. How terribly annoying.",
-		"Excellent. Now you can get beat up all over again.",
-		"You're healthy again. Try not to ruin it immediately this time.",
-		"I wasted good supplies to save one fragile player.",
-		"You're completely fine. The twisteds will find you much tastier now.",
-		"Oh good, you're healthy. That means I can make this harder.",
-		"All patched up. Ready to make the exact same mistakes again?",
-		"I suppose keeping you alive is slightly better than smelling you rot.",
-		"Wow. Full health. The twisteds are going to love you.",
-		"You finally stopped bleeding. Try to keep it that way.",
-		"Healing complete. I'll change your status from 'dying' to 'about to die'."
+		"Look at that, good as new.",
+		"Full health. Let's keep it that way this time.",
+		"That's a lot better. Ready to go again?",
+		"Big heal. You were cutting it close there.",
+		"Back on your feet. Nice.",
+		"Okay, you're solid again. Don't spend it all at once.",
+		"Much better. I was getting a little worried.",
+		"Fresh start. Try to make it last.",
+		"That's what I like to see.",
+		"Healthy again. Now let's finish this floor.",
+		"Topped off. Go get them.",
+		"You look a lot less like a disaster now."
 	},
 	Casual = {
-		"Do you ever wonder what's under the floor? You shouldn't look.",
-		"The lights in here are awful. Just like your outfit.",
-		"Are you lost? Because you look really, really lost.",
-		"I do hope you realize I'm not here to help you.",
-		"Please stop breathing so loudly. It's annoying.",
-		"You have a very weird face. I thought you should know.",
-		"If I could sigh, I would be doing it right now.",
-		"I would complain about the company, but you don't even count.",
-		"It is amazing how you always pick the worst way to go.",
-		"I'm judging every single choice you make. It's not going well.",
-		"Are you going to do something useful, or just stand there staring?",
-		"The floor isn't going to break. Stop walking so weirdly.",
-		"I'd give you a map, but I think it's funnier to watch you get lost.",
-		"I miss the old players. They screamed much quieter than you do.",
-		"I'd ask you to run faster, but I don't want you to trip and cry.",
-		"The way you walk around is just... really sad to watch.",
-		"I'd ask how you are, but I literally don't care at all.",
-		"Sorry about the mess. I've really let the place go.",
-		"I might take up a hobby. Reanimating the dead, maybe.",
-		"I'm happy to put this all behind us and get back to work. We've got a lot to do."
+		"Quiet in here. I don't trust it.",
+		"You hear that? No? Good. Me neither.",
+		"Machines first, snacks later. Probably.",
+		"If you see a locker, just keep it in mind.",
+		"I'd tell you a joke, but they might hear you laugh.",
+		"Have you checked that room? I feel like you haven't.",
+		"I'm just saying, the elevator is not going anywhere without you.",
+		"How are we doing? Be honest.",
+		"Take it slow. Nobody's grading this.",
+		"I like this floor. Fewer surprises. So far.",
+		"Don't forget to grab what you can carry.",
+		"Every time it goes quiet I get a little nervous.",
+		"You're doing fine, by the way. Just thought you should hear it.",
+		"Stretch your legs. Not literally, keep moving.",
+		"I swear these hallways get longer every floor."
 	},
 	Affec1 = {
-		"Five whole minutes and you haven't died yet. Annoying. ^ _^",
-		"Still alive? Did the twisteds lose their glasses or something? ᵔ⤙ᵔ",
-		"Look at you running around like a headless chicken. ^ _^",
-		"Are you hiding in a corner or actually doing something? ᵔ⤙ᵔ",
-		"Not a single hit taken. Don't get cocky, it won't last. ^ _^",
-		"Five minutes without dying. You're just delaying the inevitable. ᵔ⤙ᵔ",
-		"You haven't lost any health yet. Did the twisteds take a nap? ^ _^",
-		"Still in one piece? Keep running, it's funny watching you panic. ᵔ⤙ᵔ",
-		"I was getting ready to laugh, but you're still walking around. ^ _^",
-		"Look at those little legs scramble. ᵔ⤙ᵔ",
-		"Five minutes clean. Let's see how fast you mess it up. ^ _^",
-		"You survived five minutes. Don't let it go to your head. ᵔ⤙ᵔ",
-		"No damage yet. Try not to trip over your own feet now. ^ _^",
-		"You're running fast today. Must be terrified. ᵔ⤙ᵔ",
-		"Still breathing? Fine, I'll hold off on the trash talk for a bit. ^ _^",
-		"You haven't gotten hit once. The twisteds must be slacking. ᵔ⤙ᵔ",
-		"Running in circles won't save you forever. ^ _^",
-		"No scratches yet. Don't worry, you'll mess up soon enough. ᵔ⤙ᵔ",
-		"You're surviving way longer than usual. It's almost creepy. ^ _^",
-		"Still alive. Cute. Let's see how long that lasts. ᵔ⤙ᵔ"
+		"Five minutes without a scratch. Not bad at all. ^ _^",
+		"Still clean. You're actually pretty good at this. ᵔ⤙ᵔ",
+		"No hits yet. Whatever you're doing, keep doing it. ^ _^",
+		"Five minutes and they still haven't touched you. Nice. ᵔ⤙ᵔ",
+		"You're making this look easy. It isn't. ^ _^",
+		"Not one hit. I'm a little impressed. ᵔ⤙ᵔ",
+		"Clean run so far. Don't jinx it. ^ _^",
+		"Okay, you're on a roll. ᵔ⤙ᵔ",
+		"Still full health. That's genuinely good playing. ^ _^",
+		"They keep missing you. I love that for you. ᵔ⤙ᵔ"
 	},
 	Affec2 = {
-		"Woah, woah, woaah—.. Ha, ha ha hahaha! Good news. I just figured out that your survival rate is up 200%. ^ _^",
-		"Fifteen minutes without getting hit once. You really are terrified of dying. ᵔ⤙ᵔ",
-		"Running laps around the map won't make you look any less ridiculous. ^ _^",
-		"Fifteen whole minutes? Okay, now you're just being annoying. ᵔ⤙ᵔ",
-		"You haven't taken a single hit. Seriously, go touch some grass. ^ _^",
-		"I ran out of jokes about you dying. You're ruining my fun. ᵔ⤙ᵔ",
-		"You're actually dragging this out on purpose, aren't you? Disgusting. ^ _^",
-		"Not one hit in fifteen minutes. The twisteds are completely useless today. ᵔ⤙ᵔ",
-		"Stop running around so much, you're making the sensors dizzy. ^ _^",
-		"The twisteds must be blind if they haven't caught you yet. ᵔ⤙ᵔ",
-		"I'm still waiting to see you get wrecked. Don't disappoint me. ^ _^",
-		"Still zero damage? You really don't want to get touched, huh? ᵔ⤙ᵔ",
-		"You've been alive so long I might actually have to learn your name. Gross. ^ _^",
-		"Look at you sprint. All that effort just to end up on the floor later. ᵔ⤙ᵔ",
-		"Fifteen minutes clean. I'm bored waiting for you to fail. ^ _^",
-		"You're dodging like your life depends on it. Well, it does. ᵔ⤙ᵔ",
-		"Still not dead? You're really stretching this run out. ^ _^",
-		"You’ve gone this long without a scratch. Just makes the fall funnier. ᵔ⤙ᵔ",
-		"No hits at all. Are the twisteds even trying right now? ^ _^",
-		"Still standing? Fine. Just makes the eventual hit hurt more. ᵔ⤙ᵔ"
+		"Fifteen minutes, no damage. Who taught you to play like that? ^ _^",
+		"Okay, I'm officially impressed. Not one hit. ᵔ⤙ᵔ",
+		"Fifteen minutes clean. They must be so frustrated right now. ^ _^",
+		"You're kind of carrying this whole thing, you know. ᵔ⤙ᵔ",
+		"Still untouched. I'm starting to think you're a ghost. ^ _^",
+		"This is a seriously good run. Don't let it get to your head. ᵔ⤙ᵔ",
+		"I keep waiting for something to go wrong and it just doesn't. ^ _^",
+		"Fifteen minutes of perfect dodging. Show-off. ᵔ⤙ᵔ",
+		"Not a single scratch. Remind me to never bet against you. ^ _^",
+		"Whatever you're doing, it's working. Keep it up. ᵔ⤙ᵔ"
 	}
 }
 
@@ -535,7 +481,7 @@ local function processChat()
 	local charWait = 0.02
 	
 	for i = 1, #message do
-		if shuttingDown then break end
+		if shuttingDown or not toggleStates.Responses then break end
 		zeroText.Text = string.sub(message, 1, i)
 		if i % 2 == 0 then
 			pcall(function()
@@ -546,7 +492,9 @@ local function processChat()
 		task.wait(charWait)
 	end
 	
-	task.wait(math.clamp(#message * 0.06, 2, 4))
+	if toggleStates.Responses then
+		task.wait(math.clamp(#message * 0.06, 2, 4))
+	end
 	
 	isChatting = false
 	if #chatQueue > 0 then
@@ -563,7 +511,7 @@ end
 
 local lastCategoryTick = {}
 local function queueDialogue(category)
-	if shuttingDown then return end
+	if shuttingDown or not toggleStates.Responses then return end
 	if lastCategoryTick[category] and tick() - lastCategoryTick[category] < 7.5 then return end 
 	lastCategoryTick[category] = tick()
 	
@@ -1505,6 +1453,7 @@ local function executeToggleLogic(id, state)
 	elseif id == "Stat_HUD" then statHudFrame.Visible = state
 	elseif id == "Instant_Interact" then updateProximityPrompts()
 	elseif id == "Editor" then configEditorFrame.Visible = state
+	elseif id == "Responses" then if not state then table.clear(chatQueue) end
 	elseif id == "Advanced_Radar" then
 		if not state then
 			threatRingStroke.Transparency = 1
@@ -1818,7 +1767,8 @@ createToggle("Instant_Interact", "Instant_Interact", 7)
 createToggle("Auto_Escape", "Auto_Escape", 8)
 createToggle("Advanced_Radar", "Advanced_Radar", 9)
 createToggle("Hide_Radar", "Hide_Radar", 10)
-createToggle("Editor", "Editor", 11)
+createToggle("Responses", "Responses", 11)
+createToggle("Editor", "Editor", 12)
 
 local fadeTweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
 local cachedBlips = {} 
