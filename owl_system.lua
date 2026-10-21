@@ -5,6 +5,7 @@ local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local CollectionService = game:GetService("CollectionService")
+local ProximityPromptService = game:GetService("ProximityPromptService")
 
 local player = Players.LocalPlayer
 local pgui = player:WaitForChild("PlayerGui")
@@ -380,7 +381,59 @@ local DialogueLines = {
 		"Fifteen minutes of perfect dodging. Show-off. ᵔ⤙ᵔ",
 		"Not a single scratch. Remind me to never bet against you. ^ _^",
 		"Whatever you're doing, it's working. Keep it up. ᵔ⤙ᵔ"
+	},
+	MachineStart = {
+		"Good, a machine. Get it going.",
+		"Okay, you work, I'll keep an ear out.",
+		"Nice. Stay focused on that one.",
+		"Machine time. Don't let anything sneak up on you.",
+		"That's progress. Keep at it.",
+		"Every machine counts. Go on.",
+		"I'll watch the hallway. Mostly.",
+		"Steady hands. You've got this."
+	},
+	ItemPickup = {
+		"Ooh, grab that.",
+		"Good find. Hang on to it.",
+		"That'll come in handy.",
+		"Pockets getting full? Good.",
+		"Nice, I didn't even see that.",
+		"Free stuff. My favorite.",
+		"Keep that for later. Trust me."
+	},
+	CloseCall = {
+		"Hey. Hey. Something's right next to you.",
+		"Too close. Move, move, move.",
+		"Don't look back, just go.",
+		"Okay, that's way too close for my liking.",
+		"Something's right on top of you. Go.",
+		"I really don't like how close that is.",
+		"Run now, talk later."
+	},
+	Running = {
+		"Where are we going in such a hurry?",
+		"Look at you go.",
+		"Running is good. Running into things is less good.",
+		"Keep that pace up and nothing's catching you.",
+		"Don't forget to breathe while you're sprinting.",
+		"Fast. I like it."
+	},
+	Idle = {
+		"You've been standing still a while. Everything okay?",
+		"Taking a breather? Fair enough.",
+		"Hello? Still with me?",
+		"Not to rush you, but the floor isn't going to clear itself.",
+		"Hiding is valid. Just don't stay too long.",
+		"It's quiet. Maybe a little too quiet to just stand here."
 	}
+}
+
+local DialogueCooldowns = {
+	MachineStart = 45,
+	ItemPickup = 30,
+	CloseCall = 40,
+	Running = 90,
+	Idle = 120
 }
 
 local ZERO_POS_SHOWN = UDim2.new(0.5, -130, 0, 6)
@@ -562,7 +615,7 @@ end
 local lastCategoryTick = {}
 local function queueDialogue(category)
 	if shuttingDown or not toggleStates.Responses then return end
-	if lastCategoryTick[category] and tick() - lastCategoryTick[category] < 7.5 then return end 
+	if lastCategoryTick[category] and tick() - lastCategoryTick[category] < (DialogueCooldowns[category] or 7.5) then return end 
 	lastCategoryTick[category] = tick()
 	
 	local lines = DialogueLines[category]
@@ -579,6 +632,9 @@ local lastHealth = 0
 local lastHitTick = tick()
 local lastAffec1Tick = 0
 local lastAffec2Tick = 0
+local zeroHumanoid = nil
+local movingSince = nil
+local stillSince = tick()
 
 local function bindZeroLogicToCharacter(char)
 	if not char then return end
@@ -587,6 +643,9 @@ local function bindZeroLogicToCharacter(char)
 	
 	lastHealth = hum.Health
 	lastHitTick = tick()
+	zeroHumanoid = hum
+	movingSince = nil
+	stillSince = tick()
 	
 	hum.HealthChanged:Connect(function(newHealth)
 		if shuttingDown then return end
@@ -614,6 +673,19 @@ end
 
 if player.Character then bindZeroLogicToCharacter(player.Character) end
 player.CharacterAdded:Connect(bindZeroLogicToCharacter)
+
+local function onZeroPromptUsed(prompt, plr)
+	if shuttingDown or plr ~= player or not prompt then return end
+	local parentModel = prompt:FindFirstAncestorWhichIsA("Model")
+	if parentModel and (TrackedEntities.Machines[parentModel] or isMachine(parentModel)) then
+		queueDialogue("MachineStart")
+	elseif prompt.ActionText ~= "" and isItemAllowed(prompt.ActionText) then
+		queueDialogue("ItemPickup")
+	end
+end
+
+table.insert(connections, ProximityPromptService.PromptButtonHoldBegan:Connect(onZeroPromptUsed))
+table.insert(connections, ProximityPromptService.PromptTriggered:Connect(onZeroPromptUsed))
 
 task.spawn(function()
 	while task.wait(50) do
@@ -2332,6 +2404,9 @@ local function executeRadarTick()
 		if blipType == "Twisted" and dist2D < nearestTwistedDist then
 			nearestTwistedDist = dist2D
 		end
+		if blipType == "Twisted" and dist2D <= 15 then
+			queueDialogue("CloseCall")
+		end
 
 		if dist2D <= radarRange or toggleStates.Advanced_Radar then
 			seenTargets[targetObj] = true
@@ -2464,6 +2539,22 @@ table.insert(connections, RunService.Heartbeat:Connect(function()
 		elseif timeSinceDamage >= 300 and timeSinceDamage < 900 and (tick() - lastAffec1Tick > 90) then
 			lastAffec1Tick = tick()
 			queueDialogue("Affec1")
+		end
+	end
+
+	if zeroHumanoid and zeroHumanoid.Parent and zeroHumanoid.Health > 0 then
+		if zeroHumanoid.MoveDirection.Magnitude > ANALOG_DEADZONE then
+			stillSince = nil
+			movingSince = movingSince or tick()
+			if tick() - movingSince >= 12 and not isChatting then
+				queueDialogue("Running")
+			end
+		else
+			movingSince = nil
+			stillSince = stillSince or tick()
+			if tick() - stillSince >= 40 and not isChatting then
+				queueDialogue("Idle")
+			end
 		end
 	end
 
