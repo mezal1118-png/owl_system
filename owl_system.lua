@@ -48,9 +48,11 @@ local CONFIG = {
 	JumpMultiplier = 0.5,
 
 	-- tpwalk
-	TPSpeedMin = 5,            -- studs per second added on top of normal walking
-	TPSpeedMax = 150,
-	TPSpeedDefault = 40,
+	TPSpeedMin = 0.15,         -- studs per second added on top of normal walking
+	TPSpeedMax = 1,
+	TPSpeedDefault = 0.5,
+	TPSpeedStep = 0.01,        -- slider snaps to this
+	TPPerFrame = false,        -- true = speed is studs per FRAME (~60x faster, classic tpwalk feel)
 	TPWallCheck = true,        -- raycast ahead so you don't phase through walls
 	TPWallPadding = 1.5,
 }
@@ -206,7 +208,8 @@ local function stepTPWalk(dt)
 		return
 	end
 
-	local offset = moveDir * TPWalk.Speed * dt
+	local step = CONFIG.TPPerFrame and 1 or dt
+	local offset = moveDir * (TPWalk.Speed * step)
 
 	if CONFIG.TPWallCheck then
 		rayParams.FilterDescendantsInstances = { char }
@@ -218,7 +221,7 @@ local function stepTPWalk(dt)
 		end
 	end
 
-	root.CFrame += offset -- position only; rotation untouched
+	root.CFrame = root.CFrame + offset -- position only; rotation untouched
 end
 
 --------------------------------------------------------------------------------
@@ -458,7 +461,7 @@ local closeBtn = make("TextButton", {
 	TextSize = 14,
 	ZIndex = 6,
 }, panel)
-make("UIStroke", { Color = COLORS.Purple, Thickness = 2 }, closeBtn)
+make("UIStroke", { Color = COLORS.Purple, Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, closeBtn)
 
 --------------------------------------------------------------------------------
 -- GUI: TOGGLE CARD WITH ANIMATED SWITCH
@@ -477,7 +480,7 @@ local function makeToggleCard(labelText, subText, y, onToggle)
 		ClipsDescendants = true,
 		ZIndex = 5,
 	}, panel)
-	local stroke = make("UIStroke", { Color = COLORS.Bar, Thickness = 1.5 }, card)
+	local stroke = make("UIStroke", { Color = COLORS.Bar, Thickness = 1.5, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, card)
 	local scale = make("UIScale", { Scale = 1 }, card)
 
 	local accent = make("Frame", {
@@ -673,13 +676,15 @@ local sKnobScale = make("UIScale", { Scale = 1 }, sKnob)
 table.insert(entranceItems, { inst = hit, rest = SLIDER_REST })
 
 local function setSpeed(value, animate)
-	value = math.clamp(math.floor(value + 0.5), CONFIG.TPSpeedMin, CONFIG.TPSpeedMax)
+	local stepSize = CONFIG.TPSpeedStep
+	value = math.floor(value / stepSize + 0.5) * stepSize
+	value = math.clamp(value, CONFIG.TPSpeedMin, CONFIG.TPSpeedMax)
 	TPWalk.Speed = value
 	local a = (value - CONFIG.TPSpeedMin) / (CONFIG.TPSpeedMax - CONFIG.TPSpeedMin)
 	local d = animate and 0.08 or 0
 	tween(fill, d, { Size = UDim2.fromScale(a, 1) })
 	tween(sKnob, d, { Position = UDim2.fromScale(a, 0.5) })
-	sliderValue.Text = string.format("+%d st/s", value)
+	sliderValue.Text = string.format(CONFIG.TPPerFrame and "+%.2f st/f" or "+%.2f st/s", value)
 end
 
 local dragging = false
@@ -760,7 +765,7 @@ local tab = make("TextButton", {
 	TextColor3 = COLORS.Black,
 	TextSize = 18,
 }, gui)
-make("UIStroke", { Color = COLORS.Purple, Thickness = 2 }, tab)
+make("UIStroke", { Color = COLORS.Purple, Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, tab)
 
 --------------------------------------------------------------------------------
 -- BEHAVIOUR
@@ -769,7 +774,7 @@ local visible = false
 local shakeId = 0
 
 local function shake(strength, steps)
-	shakeId += 1
+	shakeId = shakeId + 1
 	local id = shakeId
 	task.spawn(function()
 		for i = 1, steps do
@@ -850,7 +855,7 @@ local function playEntrance()
 	end
 
 	for i, item in ipairs(entranceItems) do
-		item.inst.Position = item.rest - UDim2.fromOffset(PANEL_W, 0)
+		item.inst.Position = item.rest + UDim2.fromOffset(-PANEL_W, 0)
 		tween(item.inst, 0.55, { Position = item.rest }, Enum.EasingStyle.Back, Enum.EasingDirection.Out, 0.3 + 0.09 * i)
 	end
 
@@ -917,7 +922,7 @@ RunService.RenderStepped:Connect(function(dt)
 	if not visible then
 		return
 	end
-	shownMass += (getMass() - shownMass) * math.min(1, dt * 8)
+	shownMass = shownMass + (getMass() - shownMass) * math.min(1, dt * 8)
 	local char = player.Character
 	local root = char and char:FindFirstChild("HumanoidRootPart")
 	local vel = root and root.AssemblyLinearVelocity or Vector3.zero
